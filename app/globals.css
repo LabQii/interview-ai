@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0a0b1e;
+  --bg-card: #0f1027;
+  --bg-elevated: #151730;
+  --accent-purple: #7c3aed;
+  --accent-blue: #3b82f6;
+  --accent-gradient: linear-gradient(135deg, #7c3aed, #3b82f6);
+  --border: rgba(255, 255, 255, 0.08);
+  --text-muted: rgba(255, 255, 255, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-primary);
+  color: white;
+}
+
+@layer components {
+  .card {
+    @apply bg-[#0f1027] border border-white/[0.06] rounded-2xl;
+  }
+
+  .card-elevated {
+    @apply bg-[#151730] border border-white/[0.08] rounded-2xl;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-violet-600 to-blue-600 text-white font-semibold 
+           px-6 py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all 
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply border border-white/20 text-white/80 font-medium px-6 py-3 rounded-xl 
+           hover:bg-white/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .input-field {
+    @apply bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white 
+           placeholder:text-white/30 focus:outline-none focus:border-violet-500 
+           focus:ring-1 focus:ring-violet-500/50 transition-all;
+  }
+
+  .timer-display {
+    @apply font-mono text-4xl font-bold tabular-nums;
+  }
+
+  .badge {
+    @apply text-xs font-semibold px-3 py-1 rounded-full;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.4);
+  border-radius: 2px;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(124, 58, 237, 0.6); }
+}
+
+.glow-purple {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}

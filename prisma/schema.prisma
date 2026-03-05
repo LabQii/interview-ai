@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String          @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name           String?
+  email          String?         @unique
+  role           Role            @default(CANDIDATE)
+  redeemCodeId   String?
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+  interview      Interview?
+  ruleAgreements RuleAgreement[]
+  tabSwitchLogs  TabSwitchLog[]
+  testSession    TestSession?
+  redeemCode     RedeemCode?     @relation(fields: [redeemCodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([redeemCodeId])
+}
+
+model RedeemCode {
+  id                  String                @id @default(dbgenerated("(gen_random_uuid())::text"))
+  code                String                @unique
+  duration            Int
+  position            String
+  packageName         String                @default("Standard")
+  isUsed              Boolean               @default(false)
+  isReusable          Boolean               @default(false)
+  usedAt              DateTime?             @db.Timestamptz(6)
+  expiresAt           DateTime?             @db.Timestamptz(6)
+  createdAt           DateTime              @default(now()) @db.Timestamptz(6)
+  users               User[]
+  RedeemCodeQuestions RedeemCodeQuestions[]
+}
+
+model TestSession {
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId            String    @unique
+  redeemCode        String
+  usedByCode        String?
+  position          String
+  startedAt         DateTime  @default(now()) @db.Timestamptz(6)
+  submittedAt       DateTime? @db.Timestamptz(6)
+  isSubmitted       Boolean   @default(false)
+  tabSwitchCount    Int       @default(0)
+  autoSubmitted     Boolean   @default(false)
+  totalQuestions    Int       @default(0)
+  answeredQuestions Int       @default(0)
+  score             Int?
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
+}
+
+model Question {
+  id                  String                @id @default(dbgenerated("(gen_random_uuid())::text"))
+  question            String
+  optionA             String
+  optionB             String
+  optionC             String
+  optionD             String
+  correct             String
+  duration            Int
+  category            String?
+  order               Int                   @default(0)
+  createdAt           DateTime              @default(now()) @db.Timestamptz(6)
+  answers             Answer[]
+  RedeemCodeQuestions RedeemCodeQuestions[]
+
+  @@index([category])
+}
+
+model Answer {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId     String
+  questionId String
+  answer     String
+  isCorrect  Boolean?
+  answeredAt DateTime @default(now()) @db.Timestamptz(6)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([questionId])
+}
+
+model Interview {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId        String    @unique
+  totalRetake   Int       @default(0)
+  maxRetake     Int       @default(3)
+  finalVideoUrl String?
+  videoUrls     String[]  @default([])
+  startedAt     DateTime? @db.Timestamptz(6)
+  submittedAt   DateTime? @db.Timestamptz(6)
+  isSubmitted   Boolean   @default(false)
+  aiScore       Float?
+  aiAnalysis    String?
+  duration      Int?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
+}
+
+model TabSwitchLog {
+  id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId      String
+  switchCount Int      @default(1)
+  phase       String
+  loggedAt    DateTime @default(now()) @db.Timestamptz(6)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
+}
+
+model RuleAgreement {
+  id       String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId   String
+  ruleType String
+  agreedAt DateTime @default(now()) @db.Timestamptz(6)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, ruleType])
+  @@index([userId])
+}
+
+model RedeemCodeQuestions {
+  A          String
+  B          String
+  RedeemCode RedeemCode @relation(fields: [A], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Question   Question   @relation(fields: [B], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([A, B])
+  @@map("_RedeemCodeQuestions")
+}
+
+enum Role {
+  CANDIDATE
+  HRD
+  ADMIN
+}
+
+model InterviewQuestion {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  question  String
+  category  String?
+  order     Int      @default(0)
+  hint      String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([category])
+}

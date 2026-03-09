@@ -3,27 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 // Paths that anyone can access without a userId cookie
 const PUBLIC_PATHS = [
     "/",
-    "/admin",
     "/api/timer",
     "/api/auto-submit",
     "/api/public",
-    "/api/admin/auth",
     "/api/interview/cloudinary-signature",
-    "/hrd/login",
     "/favicon.ico",
-];
-
-// Paths that require HRD token
-const HRD_PATHS = ["/hrd"];
-
-// Paths that require Admin token
-const ADMIN_PATHS = [
-    "/admin/dashboard",
-    "/admin/questions",
-    "/admin/interview-questions",
-    "/admin/codes",
-    "/admin/participants",
-    "/api/admin"
 ];
 
 export async function middleware(req: NextRequest) {
@@ -38,13 +22,72 @@ export async function middleware(req: NextRequest) {
         return NextResponse.next();
     }
 
-    // Allow public paths
-    if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    // Admin routing
+    if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
+        const isAuthApi = pathname === "/api/admin/auth";
+        if (isAuthApi) {
+            return NextResponse.next();
+        }
+
+        const adminToken = req.cookies.get("admin_token")?.value;
+        const isLoginPage = pathname === "/admin/login";
+
+        // If trying to access login page while already authenticated
+        if (isLoginPage && adminToken) {
+            try {
+                const { jwtVerify } = await import("jose");
+                const secret = new TextEncoder().encode(
+                    process.env.ADMIN_SECRET || "default_admin_secret_key"
+                );
+                await jwtVerify(adminToken, secret);
+                // Valid token, redirect to dashboard
+                return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+            } catch (error) {
+                // Invalid token will be cleared later or ignored here
+            }
+        }
+
+        // Allow access to login page
+        if (isLoginPage) {
+            return NextResponse.next();
+        }
+
+        // For all other /admin/* routes, require valid token
+        if (!adminToken) {
+            if (pathname.startsWith("/api/admin")) {
+                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            }
+            return NextResponse.redirect(new URL("/admin/login", req.url));
+        }
+
+        try {
+            const { jwtVerify } = await import("jose");
+            const secret = new TextEncoder().encode(
+                process.env.ADMIN_SECRET || "default_admin_secret_key"
+            );
+            await jwtVerify(adminToken, secret);
+
+            // If they access exactly `/admin`, redirect to dashboard
+            if (pathname === "/admin") {
+                return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+            }
+        } catch (error) {
+            console.error("Invalid admin token:", error);
+            const response = pathname.startsWith("/api/admin")
+                ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+                : NextResponse.redirect(new URL("/admin/login", req.url));
+            response.cookies.delete("admin_token");
+            return response;
+        }
+
         return NextResponse.next();
     }
 
-    // HRD dashboard — requires hrd_token cookie
-    if (HRD_PATHS.some((p) => pathname.startsWith(p))) {
+    // HRD routing
+    if (pathname.startsWith("/hrd")) {
+        if (pathname === "/hrd/login") {
+            return NextResponse.next();
+        }
         const hrdToken = req.cookies.get("hrd_token")?.value;
         if (!hrdToken || hrdToken !== process.env.HRD_SECRET_KEY) {
             return NextResponse.redirect(new URL("/hrd/login", req.url));
@@ -52,31 +95,8 @@ export async function middleware(req: NextRequest) {
         return NextResponse.next();
     }
 
-    // Admin dashboard — requires admin_token cookie
-    if (ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
-        const adminToken = req.cookies.get("admin_token")?.value;
-
-        if (!adminToken) {
-            return NextResponse.redirect(new URL("/admin", req.url));
-        }
-
-        try {
-            // dynamic import of jose is needed in edge runtime or just standard import
-            // but we can just use jwtVerify. The secret must be consistent.
-            const { jwtVerify } = await import("jose");
-            const secret = new TextEncoder().encode(
-                process.env.ADMIN_SECRET || "default_admin_secret_key"
-            );
-
-            await jwtVerify(adminToken, secret);
-        } catch (error) {
-            console.error("Invalid admin token:", error);
-            // clear invalid token just in case
-            const response = NextResponse.redirect(new URL("/admin", req.url));
-            response.cookies.delete("admin_token");
-            return response;
-        }
-
+    // Allow public paths (Candidate side config)
+    if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
         return NextResponse.next();
     }
 

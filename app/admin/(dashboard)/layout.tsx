@@ -10,10 +10,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const router = useRouter();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         setIsLoggingOut(true);
-        document.cookie = "admin_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        router.push("/admin");
+        try {
+            await fetch("/api/admin/logout", { method: "POST" });
+            window.location.href = "/admin/login";
+        } catch (error) {
+            console.error("Gagal logout:", error);
+            setIsLoggingOut(false);
+        }
     };
 
     const navItems = [

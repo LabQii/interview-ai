@@ -25,8 +25,9 @@ export default function AdminLogin() {
             });
 
             if (res.ok) {
-                router.push("/admin/dashboard");
-                router.refresh();
+                // Menggunakan window.location.href agar langsung force reload ke halaman admin
+                // Ini menghindari lag dari Next.js router transisi client-side
+                window.location.href = "/admin/dashboard";
             } else {
                 const data = await res.json();
                 setError(data.error || "Login gagal");

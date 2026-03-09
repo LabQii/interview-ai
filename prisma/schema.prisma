@@ -11,7 +11,9 @@ datasource db {
 model User {
   id             String          @id @default(dbgenerated("(gen_random_uuid())::text"))
   name           String?
+  username       String?         @unique
   email          String?         @unique
+  password       String?
   role           Role            @default(CANDIDATE)
   redeemCodeId   String?
   createdAt      DateTime        @default(now()) @db.Timestamptz(6)

@@ -1,15 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import { SignJWT } from "jose";
+
+const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { username, password } = body;
 
-        const validUsername = process.env.ADMIN_USER || "admin";
-        const validPassword = process.env.ADMIN_PASS || "admin123";
+        if (!username || !password) {
+            return NextResponse.json({ error: "Username dan password harus diisi" }, { status: 400 });
+        }
 
-        if (username === validUsername && password === validPassword) {
-            const token = `${username}:${password}`;
+        const user = await prisma.user.findUnique({
+            where: { username },
+        });
+
+        if (!user || user.role !== "ADMIN") {
+            return NextResponse.json({ error: "Username atau password salah" }, { status: 401 });
+        }
+
+        const isValidPassword = await bcrypt.compare(password, user.password || "");
+
+        if (isValidPassword) {
+            const secret = new TextEncoder().encode(
+                process.env.ADMIN_SECRET || "default_admin_secret_key"
+            );
+
+            const token = await new SignJWT({ userId: user.id, role: user.role, username: user.username })
+                .setProtectedHeader({ alg: "HS256" })
+                .setExpirationTime("24h")
+                .sign(secret);
+
             const response = NextResponse.json({ success: true });
 
             response.cookies.set("admin_token", token, {
@@ -25,6 +49,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ error: "Username atau password salah" }, { status: 401 });
     } catch (e) {
+        console.error("Admin login error:", e);
         return NextResponse.json({ error: "Gagal login" }, { status: 500 });
     }
 }

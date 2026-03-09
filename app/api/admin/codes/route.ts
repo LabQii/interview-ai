@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 
 // Middleware should protect this route
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
     try {
         const codes = await prisma.redeemCode.findMany({

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Paths that anyone can access without a userId cookie
 const PUBLIC_PATHS = [
     "/",
+    "/admin",
     "/api/timer",
     "/api/auto-submit",
     "/api/public",
@@ -16,9 +17,16 @@ const PUBLIC_PATHS = [
 const HRD_PATHS = ["/hrd"];
 
 // Paths that require Admin token
-const ADMIN_PATHS = ["/admin/dashboard", "/admin/questions", "/admin/interview-questions", "/admin/codes", "/admin/participants"];
+const ADMIN_PATHS = [
+    "/admin/dashboard",
+    "/admin/questions",
+    "/admin/interview-questions",
+    "/admin/codes",
+    "/admin/participants",
+    "/api/admin"
+];
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     // Allow Next.js internals and static files
@@ -47,10 +55,28 @@ export function middleware(req: NextRequest) {
     // Admin dashboard — requires admin_token cookie
     if (ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
         const adminToken = req.cookies.get("admin_token")?.value;
-        const validToken = process.env.ADMIN_USER + ":" + process.env.ADMIN_PASS;
-        if (!adminToken || adminToken !== validToken) {
+
+        if (!adminToken) {
             return NextResponse.redirect(new URL("/admin", req.url));
         }
+
+        try {
+            // dynamic import of jose is needed in edge runtime or just standard import
+            // but we can just use jwtVerify. The secret must be consistent.
+            const { jwtVerify } = await import("jose");
+            const secret = new TextEncoder().encode(
+                process.env.ADMIN_SECRET || "default_admin_secret_key"
+            );
+
+            await jwtVerify(adminToken, secret);
+        } catch (error) {
+            console.error("Invalid admin token:", error);
+            // clear invalid token just in case
+            const response = NextResponse.redirect(new URL("/admin", req.url));
+            response.cookies.delete("admin_token");
+            return response;
+        }
+
         return NextResponse.next();
     }
 

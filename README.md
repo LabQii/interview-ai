@@ -36,6 +36,3 @@ npx prisma migrate dev
 ```sh
 npm run dev
 ```
-
-## Dashboard HRD
-Silakan buka halaman `/hrd` dan masukkan `HRD_SECRET_KEY` dari `.env` untuk melihat live tracking peserta.

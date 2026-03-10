@@ -1,18 +1,30 @@
 import { Queue } from "bullmq";
 
+import * as dotenv from "dotenv";
+
+dotenv.config();
+if (!process.env.REDIS_URL) {
+    dotenv.config({ path: ".env.railway" });
+}
+
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 // Parse URL components for BullMQ (uses its own bundled ioredis)
 function parseRedisUrl(url: string) {
     try {
         const parsed = new URL(url);
+        const isUpstash = parsed.hostname.includes("upstash.io");
         return {
             host: parsed.hostname || "127.0.0.1",
             port: parseInt(parsed.port || "6379"),
             password: parsed.password || undefined,
+            username: parsed.username || undefined,
+            tls: parsed.protocol === "rediss:" || isUpstash ? { rejectUnauthorized: false } : undefined,
+            family: isUpstash ? 0 : undefined,
+            maxRetriesPerRequest: null,
         };
     } catch {
-        return { host: "127.0.0.1", port: 6379 };
+        return { host: "127.0.0.1", port: 6379, maxRetriesPerRequest: null };
     }
 }
 

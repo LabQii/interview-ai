@@ -6,8 +6,17 @@ export const dynamic = "force-dynamic";
 function parseRedisUrl(url: string) {
     try {
         const parsed = new URL(url);
-        return { host: parsed.hostname || "127.0.0.1", port: parseInt(parsed.port || "6379"), password: parsed.password || undefined };
-    } catch { return { host: "127.0.0.1", port: 6379 }; }
+        const isUpstash = parsed.hostname.includes("upstash.io");
+        return { 
+            host: parsed.hostname || "127.0.0.1", 
+            port: parseInt(parsed.port || "6379"), 
+            password: parsed.password || undefined,
+            username: parsed.username || undefined,
+            tls: parsed.protocol === "rediss:" || isUpstash ? { rejectUnauthorized: false } : undefined,
+            family: isUpstash ? 0 : undefined,
+            maxRetriesPerRequest: null,
+        };
+    } catch { return { host: "127.0.0.1", port: 6379, maxRetriesPerRequest: null }; }
 }
 
 export async function GET(req: NextRequest) {

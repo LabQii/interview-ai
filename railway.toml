@@ -1,10 +1,7 @@
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+builder = "NIXPACKS"
 
 [deploy]
-startCommand = "npm run start"
-healthcheckPath = "/"
-healthcheckTimeout = 300
+startCommand = "npm run worker"
 restartPolicyType = "ON_FAILURE"
 numRetries = 10

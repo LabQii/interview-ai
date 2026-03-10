@@ -40,7 +40,7 @@ export default function ParticipantDetail() {
     return (
         <div className="p-6 md:p-10 max-w-5xl mx-auto pb-24">
             <button
-                onClick={() => router.back()}
+                onClick={() => router.push('/admin/participants')}
                 className="btn-ghost flex items-center gap-2 mb-8 text-sm px-4"
             >
                 <ArrowLeft className="w-4 h-4" /> Kembali

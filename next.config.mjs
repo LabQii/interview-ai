@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // output: "standalone", // Disabled for Nixpacks to retain the workers/ folder
+    output: "standalone",
     eslint: {
         ignoreDuringBuilds: true,
     },

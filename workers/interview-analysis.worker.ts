@@ -20,6 +20,10 @@ import Groq from "groq-sdk";
 import * as dotenv from "dotenv";
 
 dotenv.config();
+if (!process.env.REDIS_URL) {
+    // Fallback if deploying on Railway and not using explicit Railway variables
+    dotenv.config({ path: ".env.railway" });
+}
 
 const execAsync = promisify(exec);
 const prisma = new PrismaClient();
@@ -36,8 +40,9 @@ function parseRedisUrl(url: string) {
             username: parsed.username || undefined,
             tls: parsed.protocol === "rediss:" || isUpstash ? { rejectUnauthorized: false } : undefined,
             family: isUpstash ? 0 : undefined, // Force IPv4/IPv6 resolution for Upstash
+            maxRetriesPerRequest: null, // Required by BullMQ for Upstash
         };
-    } catch { return { host: "127.0.0.1", port: 6379 }; }
+    } catch { return { host: "127.0.0.1", port: 6379, maxRetriesPerRequest: null }; }
 }
 
 const connection = parseRedisUrl(process.env.REDIS_URL || "redis://localhost:6379");

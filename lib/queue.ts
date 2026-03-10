@@ -16,10 +16,21 @@ function parseRedisUrl(url: string) {
     }
 }
 
-const connection = parseRedisUrl(REDIS_URL);
+// Lazy singleton — only instantiated at runtime, not at build time
+let _analysisQueue: Queue | null = null;
 
-// The main analysis queue
-export const analysisQueue = new Queue("interview-analysis", { connection });
+export function getAnalysisQueue(): Queue {
+    if (!_analysisQueue) {
+        const connection = parseRedisUrl(REDIS_URL);
+        _analysisQueue = new Queue("interview-analysis", { connection });
+    }
+    return _analysisQueue;
+}
+
+// Keep backward-compatible named export as a getter alias
+export const analysisQueue = {
+    add: (...args: Parameters<Queue["add"]>) => getAnalysisQueue().add(...args),
+};
 
 export type AnalysisJobData = {
     userId: string;

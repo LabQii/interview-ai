@@ -28,7 +28,15 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 function parseRedisUrl(url: string) {
     try {
         const parsed = new URL(url);
-        return { host: parsed.hostname || "127.0.0.1", port: parseInt(parsed.port || "6379"), password: parsed.password || undefined };
+        const isUpstash = parsed.hostname.includes("upstash.io");
+        return {
+            host: parsed.hostname || "127.0.0.1",
+            port: parseInt(parsed.port || "6379"),
+            password: parsed.password || undefined,
+            username: parsed.username || undefined,
+            tls: parsed.protocol === "rediss:" || isUpstash ? { rejectUnauthorized: false } : undefined,
+            family: isUpstash ? 0 : undefined, // Force IPv4/IPv6 resolution for Upstash
+        };
     } catch { return { host: "127.0.0.1", port: 6379 }; }
 }
 

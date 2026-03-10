@@ -442,7 +442,7 @@ export function VideoRecorder({
                         <button
                             onClick={handleSubmit}
                             disabled={uploading}
-                            className="flex-1 btn-primary bg-gradient-to-r from-blue-600 to-white/10 flex justify-center items-center gap-2"
+                            className="flex-1 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-xl py-3 flex justify-center items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25"
                         >
                             {isLastQuestion ? (
                                 <>Simpan & Selesai <CheckCircle2 className="w-5 h-5" /></>

@@ -27,6 +27,7 @@ export const metadata: Metadata = {
     type: "website",
   }
 };
+// .
 
 import UIProvider from "@/components/ui/UIProvider";
 

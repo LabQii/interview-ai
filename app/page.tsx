@@ -74,7 +74,7 @@ export default function LandingPage() {
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/90 to-white/60">
             Interview & Test AI Platform
           </span>{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/50 block mt-2 text-lg md:text-3xl font-medium tracking-normal">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/50 block mt-4 text-lg md:text-3xl font-medium tracking-normal">
             by Muhammad Iqbal Firmansyah
           </span>
         </motion.h1>

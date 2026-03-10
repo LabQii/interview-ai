@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "worker": "npx tsx workers/interview-analysis.worker.ts",
-    "postinstall": "prisma generate"
+    "worker": "npx tsx workers/interview-analysis.worker.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

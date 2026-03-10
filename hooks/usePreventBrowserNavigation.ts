@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { useUIStore } from "@/store/useUIStore";
 
 export function usePreventBrowserNavigation() {
+    const showToast = useUIStore((state) => state.showToast);
+
     useEffect(() => {
         // Push an empty state immediately when the component mounts
         // This ensures there's a forward state to "fall back" into when the user hits back.
@@ -14,7 +17,7 @@ export function usePreventBrowserNavigation() {
             window.history.pushState({ locked: true }, "", window.location.href);
 
             // Show a visual warning
-            alert("PERINGATAN: Anda tidak diperbolehkan menggunakan tombol Kembali atau Maju pada browser selama ujian berlangsung. Soal harus dikerjakan secara berurutan.");
+            showToast("PERINGATAN: Anda tidak diperbolehkan menggunakan tombol Kembali atau Maju pada browser selama ujian berlangsung.", "error", 5000);
         };
 
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -30,5 +33,5 @@ export function usePreventBrowserNavigation() {
             window.removeEventListener("popstate", handlePopState);
             window.removeEventListener("beforeunload", handleBeforeUnload);
         };
-    }, []);
+    }, [showToast]);
 }

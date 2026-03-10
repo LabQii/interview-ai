@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
+import { analysisQueue } from "@/lib/queue";
 
 export const dynamic = "force-dynamic";
 
-// Called after direct browser upload to Cloudinary — just saves the URL to DB
+// Called after direct browser upload to Cloudinary — just saves the URL to DB and queues analysis
 export async function POST(req: NextRequest) {
     const cookieStore = await cookies();
     const userId = cookieStore.get("userId")?.value;
@@ -14,13 +15,17 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const { videoUrl, isFinal } = await req.json();
+        const { videoUrl, isFinal, questionId } = await req.json();
 
         if (!videoUrl) {
             return NextResponse.json({ error: "URL video tidak ditemukan" }, { status: 400 });
         }
 
-        const interview = await prisma.interview.findUnique({ where: { userId } });
+        const interview = await prisma.interview.findUnique({
+            where: { userId },
+            include: { user: { include: { redeemCode: true } } }
+        });
+
         if (!interview) {
             return NextResponse.json({ error: "Sesi interview tidak ditemukan" }, { status: 404 });
         }
@@ -28,14 +33,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Interview sudah disubmit" }, { status: 400 });
         }
 
-        const attemptNumber = interview.totalRetake + 1;
         const newVideoUrls = [...interview.videoUrls, videoUrl];
-        const shouldFinalize = isFinal || attemptNumber >= interview.maxRetake;
+        // Only finalize the entire interview when client explicitly sends isFinal=true
+        const shouldFinalize = isFinal === true;
 
         const updated = await prisma.interview.update({
             where: { userId },
             data: {
-                totalRetake: attemptNumber,
+                totalRetake: interview.totalRetake + 1,
                 videoUrls: newVideoUrls,
                 finalVideoUrl: shouldFinalize ? videoUrl : interview.finalVideoUrl,
                 isSubmitted: shouldFinalize,
@@ -43,10 +48,37 @@ export async function POST(req: NextRequest) {
             },
         });
 
+        // Get question details to build prompt
+        let questionText = "";
+        if (questionId) {
+            const questionData = await prisma.interviewQuestion.findUnique({ where: { id: questionId } });
+            if (questionData) questionText = questionData.question;
+        }
+
+        // Queue analysis job strictly for this single question
+        const position = interview.user?.redeemCode?.position ?? "Kandidat";
+        const jobData = {
+            userId,
+            position,
+            questions: [{
+                id: questionId,
+                question: questionText,
+                videoUrl: videoUrl,
+            }]
+        };
+
+        const job = await analysisQueue.add("analyze", jobData, {
+            removeOnComplete: false,
+            removeOnFail: false,
+            attempts: 2,
+            backoff: { type: "fixed", delay: 5000 },
+        });
+
         return NextResponse.json({
             success: true,
             interview: updated,
-            canRetake: !shouldFinalize && attemptNumber < interview.maxRetake,
+            isFinalized: shouldFinalize,
+            jobId: job.id
         });
     } catch (error) {
         console.error("Save video error:", error);

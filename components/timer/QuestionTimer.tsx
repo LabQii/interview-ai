@@ -16,13 +16,13 @@ export function QuestionTimer({ remaining, total }: QuestionTimerProps) {
                     <Clock className="w-4 h-4" />
                     Waktu Soal
                 </span>
-                <span className={`font-mono font-bold ${isWarning ? "text-red-400 animate-pulse" : "text-violet-400"}`}>
+                <span className={`font-mono font-bold ${isWarning ? "text-red-400 animate-pulse" : "text-white/80"}`}>
                     {remaining} detik
                 </span>
             </div>
             <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                 <div
-                    className={`h-full rounded-full transition-all duration-1000 ease-linear ${isWarning ? "bg-red-500" : "bg-violet-500"}`}
+                    className={`h-full rounded-full transition-all duration-1000 ease-linear ${isWarning ? "bg-red-500" : "bg-white/20"}`}
                     style={{ width: `${percentage}%` }}
                 />
             </div>

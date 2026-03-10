@@ -6,11 +6,13 @@ import { Check, AlertTriangle, Clock, MonitorOff } from "lucide-react";
 import { agreeToRules } from "@/server/actions/rules";
 import { startTestSession } from "@/server/actions/testSession";
 import { motion } from "framer-motion";
+import { useUIStore } from "@/store/useUIStore";
 
 export default function TestRulesPage() {
     const [agreed, setAgreed] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const showToast = useUIStore((state) => state.showToast);
 
     const handleStart = async () => {
         if (!agreed) return;
@@ -22,7 +24,7 @@ export default function TestRulesPage() {
         // 2. Start session (generates startedAt timestamp in DB)
         const sessionRes = await startTestSession();
         if (sessionRes.error) {
-            alert(sessionRes.error);
+            showToast(sessionRes.error, "error");
             setLoading(false);
             return;
         }
@@ -75,7 +77,7 @@ export default function TestRulesPage() {
                             className="flex gap-4 p-5 rounded-xl bg-white/5 border border-white/10"
                         >
                             <div className="mt-1">
-                                <rule.icon className="w-6 h-6 text-violet-400" />
+                                <rule.icon className="w-6 h-6 text-white/80" />
                             </div>
                             <div>
                                 <h3 className="font-semibold text-lg mb-1">{rule.title}</h3>
@@ -85,8 +87,8 @@ export default function TestRulesPage() {
                     ))}
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-violet-900/20 border border-violet-500/30 rounded-xl mb-8 cursor-pointer hover:bg-violet-900/30 transition-colors" onClick={() => setAgreed(!agreed)}>
-                    <div className={`w-6 h-6 rounded flex items-center justify-center border transition-all ${agreed ? "bg-violet-600 border-violet-500" : "bg-[#0a0b1e] border-white/20"}`}>
+                <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl mb-8 cursor-pointer hover:bg-white/10 transition-colors" onClick={() => setAgreed(!agreed)}>
+                    <div className={`w-6 h-6 rounded flex items-center justify-center border transition-all ${agreed ? "bg-white/10 border-white/20" : "bg-background border-white/20"}`}>
                         {agreed && <Check className="w-4 h-4 text-white" />}
                     </div>
                     <span className="font-medium text-sm w-full select-none text-white/90">

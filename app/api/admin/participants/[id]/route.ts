@@ -39,11 +39,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             orderBy: { loggedAt: "desc" }
         });
 
+        // Get AI analyses for the participant
+        const analyses = await prisma.interviewAnalysis.findMany({
+            where: { userId: params.id },
+            orderBy: { createdAt: "asc" }
+        });
+
         return NextResponse.json({
             success: true,
             participant,
             answers,
-            violations
+            violations,
+            analyses
         });
     } catch (e) {
         return NextResponse.json({ error: "Gagal memuat detail peserta" }, { status: 500 });

@@ -3,13 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0a0b1e;
-  --bg-card: #0f1027;
-  --bg-elevated: #151730;
-  --accent-purple: #7c3aed;
-  --accent-blue: #3b82f6;
-  --accent-gradient: linear-gradient(135deg, #7c3aed, #3b82f6);
-  --border: rgba(255, 255, 255, 0.08);
+  --background: #0F0F11;
+  --foreground: #ffffff;
+  --bg-primary: #0F0F11;
+  --bg-card: #161618;
+  --bg-elevated: #1a1a1f;
+  /* slightly brighter for depth */
+  --accent-purple: #a8b1ff;
+  /* more subtle/muted accent if needed */
+  --accent-blue: #737380;
+  --accent-gradient: linear-gradient(135deg, #1A1A1D, #121214);
+  --border: rgba(255, 255, 255, 0.05);
   --text-muted: rgba(255, 255, 255, 0.5);
 }
 
@@ -17,43 +21,134 @@
   box-sizing: border-box;
 }
 
+html {
+  background-color: #0F0F11;
+}
+
 body {
-  background: var(--bg-primary);
+  background: linear-gradient(135deg, #0F0F11, #1A1A1D, #121214);
   color: white;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Subtle Grain Effect */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  z-index: 50;
 }
 
 @layer components {
-  .card {
-    @apply bg-[#0f1027] border border-white/[0.06] rounded-2xl;
-  }
 
+  /* Graphite Cards */
+  .card,
   .card-elevated {
-    @apply bg-[#151730] border border-white/[0.08] rounded-2xl;
+    background: linear-gradient(145deg, #161618, #0E0E10);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    transition: all 0.3s ease;
   }
 
+  .card:hover,
+  .card-elevated:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  /* Graphite Primary Button */
   .btn-primary {
-    @apply bg-gradient-to-r from-violet-600 to-blue-600 text-white font-semibold 
-           px-6 py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all 
-           disabled:opacity-40 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #1F1F23, #2A2A30);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 10px rgba(0, 0, 0, 0.2);
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 
+  .btn-primary:active {
+    transform: scale(0.97);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2A2A30, #36363C);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Ghost Button */
   .btn-ghost {
-    @apply border border-white/20 text-white/80 font-medium px-6 py-3 rounded-xl 
-           hover:bg-white/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+    background: transparent;
   }
 
+  .btn-ghost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Inputs */
   .input-field {
-    @apply bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white 
-           placeholder:text-white/30 focus:outline-none focus:border-violet-500 
-           focus:ring-1 focus:ring-violet-500/50 transition-all;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: white;
+    transition: all 0.2s ease;
   }
 
+  .input-field::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .input-field:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+  /* Autocomplete fix for Dark Theme */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #161618 inset !important;
+    -webkit-text-fill-color: white !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  /* Utilities */
   .timer-display {
-    @apply font-mono text-4xl font-bold tabular-nums;
+    font-family: monospace;
+    font-size: 2.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
   }
 
   .badge {
-    @apply text-xs font-semibold px-3 py-1 rounded-full;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
   }
 }
 
@@ -62,18 +157,27 @@ body {
   width: 4px;
   height: 4px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(124, 58, 237, 0.4);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
 }
 
 /* Animations */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(124, 58, 237, 0.6); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+  }
 }
 
 .glow-purple {
@@ -81,8 +185,15 @@ body {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {

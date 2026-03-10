@@ -22,7 +22,8 @@ model User {
   ruleAgreements RuleAgreement[]
   tabSwitchLogs  TabSwitchLog[]
   testSession    TestSession?
-  redeemCode     RedeemCode?     @relation(fields: [redeemCodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  analyses       InterviewAnalysis[]
+  redeemCode     RedeemCode?     @relation(fields: [redeemCodeId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([redeemCodeId])
 }
@@ -163,4 +164,28 @@ model InterviewQuestion {
   updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   @@index([category])
+}
+
+model InterviewAnalysis {
+  id                   String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId               String
+  questionId           String?
+  videoUrl             String
+  transcript           String?
+  aiResume             String?
+  aiSummary            String?
+  aiHighlights         String[] @default([])
+  aiWeaknesses         String[] @default([])
+  communicationScore   Int?
+  relevanceScore       Int?
+  confidenceScore      Int?
+  overallScore         Int?
+  recommendation       String?
+  recommendationReason String?
+  status               String   @default("processing_ai")
+  createdAt            DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
 }

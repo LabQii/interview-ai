@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Users, Activity, StopCircle, RefreshCcw, Search, Clock, ShieldAlert } from "lucide-react";
 import { formatTimer } from "@/lib/timer";
+import { useUIStore } from "@/store/useUIStore";
 
 interface Participant {
     id: string;
@@ -21,6 +22,7 @@ export default function HRDDashboard() {
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState("");
     const [search, setSearch] = useState("");
+    const { showConfirm, showToast } = useUIStore();
 
     const fetchParticipants = async (currentToken: string) => {
         try {
@@ -69,31 +71,41 @@ export default function HRDDashboard() {
         fetchParticipants(tk);
     };
 
-    const forceSubmit = async (userId: string) => {
-        if (!confirm("Paksa submit sesi peserta ini?")) return;
-        try {
-            const res = await fetch("/api/hrd/participants", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-hrd-token": token,
-                },
-                body: JSON.stringify({ userId })
-            });
-            if (res.ok) fetchParticipants(token);
-        } catch (e) {
-            console.error(e);
-        }
+    const forceSubmit = (userId: string) => {
+        showConfirm(
+            "Paksa Submit Sesi?",
+            "Yakin ingin memaksa submit sesi peserta ini? Semua jawaban yang ada akan dikunci.",
+            async () => {
+                try {
+                    const res = await fetch("/api/hrd/participants", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-hrd-token": token,
+                        },
+                        body: JSON.stringify({ userId })
+                    });
+                    if (res.ok) {
+                        fetchParticipants(token);
+                        showToast("Sesi peserta berhasil disubmit paksa.", "success");
+                    } else {
+                        showToast("Gagal men-submit sesi peserta.", "error");
+                    }
+                } catch (e) {
+                    showToast("Terjadi kesalahan jaringan.", "error");
+                }
+            }
+        );
     };
 
-    if (loading) return <div className="min-h-screen bg-[#0a0b1e] text-white flex items-center justify-center">Memuat Dashboard...</div>;
+    if (loading) return <div className="min-h-screen bg-background text-white flex items-center justify-center">Memuat Dashboard...</div>;
 
     if (!token) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#0a0b1e]">
-                <div className="card-elevated p-8 max-w-md w-full border-blue-500/20">
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="card-elevated p-8 max-w-md w-full border-white/20/20">
                     <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
                             <ShieldAlert className="w-5 h-5 text-white" />
                         </div>
                         <h1 className="text-2xl font-bold">Autentikasi HRD</h1>
@@ -106,7 +118,7 @@ export default function HRDDashboard() {
                             className="input-field"
                             required
                         />
-                        <button type="submit" className="btn-primary bg-gradient-to-r from-blue-600 to-indigo-600">Akses Dashboard</button>
+                        <button type="submit" className="btn-primary bg-gradient-to-r from-blue-600 to-white/10">Akses Dashboard</button>
                     </form>
                 </div>
             </div>
@@ -119,16 +131,16 @@ export default function HRDDashboard() {
     );
 
     return (
-        <div className="min-h-screen bg-[#0a0b1e] text-white">
+        <div className="min-h-screen bg-background text-white">
             {/* Header */}
-            <header className="bg-[#0f1027]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40">
+            <header className="bg-card/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40">
                 <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
                             <Activity className="w-5 h-5 text-white" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-bold tracking-tight">HRD Command Center</span>
+                            <span className="font-bold tracking-tight">Labqii Command Center</span>
                             <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" /> LIVE MONITORING
                             </span>
@@ -148,9 +160,9 @@ export default function HRDDashboard() {
             <main className="p-6">
                 {/* Stats Row */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="card p-5 border-blue-500/20">
+                    <div className="card p-5 border-white/20/20">
                         <h3 className="text-white/60 text-xs font-bold tracking-widest mb-1">TOTAL PESERTA</h3>
-                        <span className="text-3xl font-bold flex items-baseline gap-2">{participants.length} <Users className="w-4 h-4 text-blue-400" /></span>
+                        <span className="text-3xl font-bold flex items-baseline gap-2">{participants.length} <Users className="w-4 h-4 text-white/80" /></span>
                     </div>
                     <div className="card p-5">
                         <h3 className="text-white/60 text-xs font-bold tracking-widest mb-1">SELESAI TES (LULUS)</h3>
@@ -158,7 +170,7 @@ export default function HRDDashboard() {
                     </div>
                     <div className="card p-5">
                         <h3 className="text-white/60 text-xs font-bold tracking-widest mb-1">INTERVIEW SELESAI</h3>
-                        <span className="text-3xl font-bold text-violet-400">{participants.filter(p => p.isInterviewSubmitted).length}</span>
+                        <span className="text-3xl font-bold text-white/80">{participants.filter(p => p.isInterviewSubmitted).length}</span>
                     </div>
                     <div className="card p-5 border-red-500/20">
                         <h3 className="text-white/60 text-xs font-bold tracking-widest mb-1">PELANGGARAN TAB (&gt;0)</h3>
@@ -175,7 +187,7 @@ export default function HRDDashboard() {
                             placeholder="Cari ID Peserta atau Posisi..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500"
+                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-white/20"
                         />
                     </div>
                 </div>
@@ -203,7 +215,7 @@ export default function HRDDashboard() {
                                         {p.isTestSubmitted ? (
                                             <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 text-xs font-bold">SELESAI</span>
                                         ) : p.startedAt ? (
-                                            <span className="px-2 py-1 rounded bg-blue-500/10 text-blue-400 text-xs font-bold flex items-center gap-1 w-max">
+                                            <span className="px-2 py-1 rounded bg-white/20/10 text-white/80 text-xs font-bold flex items-center gap-1 w-max">
                                                 <Clock className="w-3 h-3" /> {formatTimer(p.remainingTime)}
                                             </span>
                                         ) : (
@@ -222,7 +234,7 @@ export default function HRDDashboard() {
                                     </td>
                                     <td className="p-4 text-center">
                                         {p.isInterviewSubmitted ? (
-                                            <span className="px-2 py-1 rounded bg-violet-500/10 text-violet-400 text-xs font-bold">DIKUMPULKAN</span>
+                                            <span className="px-2 py-1 rounded bg-white/5 text-white/80 text-xs font-bold">DIKUMPULKAN</span>
                                         ) : (
                                             <span className="text-white/30">-</span>
                                         )}

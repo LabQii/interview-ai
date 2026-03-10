@@ -1,16 +1,40 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Video, VideoOff, Square, RefreshCcw, Send, AlertCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Video, VideoOff, Square, RefreshCcw, AlertCircle, ChevronRight, CheckCircle2 } from "lucide-react";
+import { useUIStore } from "@/store/useUIStore";
 
 const MAX_RETAKE = 3;
 const MAX_SECONDS = 60;
 
-export function VideoRecorder() {
-    const router = useRouter();
+const AI_STEPS_CONFIG = [
+    { id: "upload", label: "Mengunggah video sistem", prog: 15 },
+    { id: "fetch", label: "Menyiapkan AI", prog: 30 },
+    { id: "audio", label: "Ekstraksi audio", prog: 50 },
+    { id: "stt", label: "Konversi ke teks (Whisper)", prog: 70 },
+    { id: "ai", label: "Analisis kandidat (Groq)", prog: 90 },
+    { id: "save", label: "Finalisasi hasil", prog: 100 },
+];
 
-    // Recording state
+interface VideoRecorderProps {
+    /** ID of the interview question being answered (for per-question save) */
+    questionId?: string;
+    /** 0-based index of this question in the interview session */
+    questionIndex?: number;
+    /** Whether this is the last question */
+    isLastQuestion?: boolean;
+    /** Called after a successful save — tells the parent to advance */
+    onComplete?: () => void;
+}
+
+export function VideoRecorder({
+    questionId,
+    questionIndex = 0,
+    isLastQuestion = false,
+    onComplete,
+}: VideoRecorderProps) {
+    const showToast = useUIStore((state) => state.showToast);
+
     const videoRef = useRef<HTMLVideoElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
@@ -25,27 +49,67 @@ export function VideoRecorder() {
     const [retakeCount, setRetakeCount] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
-    // Upload state
     const [uploading, setUploading] = useState(false);
-    const [aiProgressText, setAiProgressText] = useState("");
     const [aiProgressPerc, setAiProgressPerc] = useState(0);
 
-    const AI_STEPS = [
-        { text: "Mengunggah video ke server...", time: 0, prog: 10 },
-        { text: "Mengekstrak audio dari rekaman...", time: 1500, prog: 30 },
-        { text: "Speech-to-Text sedang memproses...", time: 3500, prog: 55 },
-        { text: "AI menganalisis intonasi & kepercayaan diri...", time: 6000, prog: 75 },
-        { text: "Mengevaluasi relevansi jawaban...", time: 8500, prog: 90 },
-        { text: "Menyimpan hasil ke server HRD...", time: 10000, prog: 99 },
-    ];
+    const [uploadJobId, setUploadJobId] = useState<string | null>(null);
+    const [jobStatuses, setJobStatuses] = useState<Record<string, string>>({});
+    const [analysisDone, setAnalysisDone] = useState(false);
 
     const canRetake = retakeCount < MAX_RETAKE;
 
-    // Effect: attach live camera stream to video element
+    // Polling effect for job status
+    useEffect(() => {
+        if (!uploadJobId || analysisDone) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/interview/job-status?jobId=${uploadJobId}`);
+                if (!res.ok) return;
+                const data = await res.json();
+
+                const newStatuses = { upload: "done", ...data.stepStatuses };
+                setJobStatuses(newStatuses);
+
+                let currentStepIndex = 0;
+                for (let i = 0; i < AI_STEPS_CONFIG.length; i++) {
+                    const stepId = AI_STEPS_CONFIG[i].id;
+                    const status = newStatuses[stepId];
+                    if (status === "done" || status === "running") {
+                        currentStepIndex = i;
+                    }
+                }
+
+                const step = AI_STEPS_CONFIG[currentStepIndex];
+                let perc = step.prog;
+                if (newStatuses[step.id] === "running") {
+                    perc = step.prog - Math.floor(step.prog * 0.1);
+                }
+                setAiProgressPerc(perc);
+
+                if (data.state === "completed" || data.state === "failed") {
+                    if (data.state === "completed") {
+                        setJobStatuses({ ...newStatuses, save: "done" });
+                        setAiProgressPerc(100);
+                        setAnalysisDone(true);
+                    } else {
+                        setError("Gagal menganalisis video. Silakan coba lagi.");
+                        setUploading(false);
+                        setUploadJobId(null);
+                    }
+                    clearInterval(interval);
+                }
+            } catch (err) {
+                console.error("Polling error", err);
+            }
+        }, 1500);
+
+        return () => clearInterval(interval);
+    }, [uploadJobId, analysisDone]);
+
     useEffect(() => {
         if (videoRef.current) {
             if (previewUrl) {
-                // Clear live stream so src attribute works
                 videoRef.current.srcObject = null;
             } else if (streamRef.current) {
                 videoRef.current.srcObject = streamRef.current;
@@ -59,7 +123,6 @@ export function VideoRecorder() {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
             mediaRecorderRef.current.stop();
         }
-        // Don't stop tracks here — let onstop callback do it after blob is assembled
         setIsRecording(false);
     }, []);
 
@@ -73,12 +136,10 @@ export function VideoRecorder() {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             streamRef.current = stream;
 
-            // Attach stream immediately for live preview
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
             }
 
-            // Pick best supported MIME type
             const preferredTypes = [
                 "video/webm;codecs=vp8,opus",
                 "video/webm",
@@ -99,7 +160,6 @@ export function VideoRecorder() {
                 const url = URL.createObjectURL(blob);
                 setRecordedBlob(blob);
                 setPreviewUrl(url);
-                // Stop camera tracks after blob is created
                 stream.getTracks().forEach(t => t.stop());
                 streamRef.current = null;
             };
@@ -118,7 +178,6 @@ export function VideoRecorder() {
                 });
             }, 1000);
 
-            // Auto-stop at 60s
             autoStopRef.current = setTimeout(() => stopStream(), MAX_SECONDS * 1000);
         } catch (err) {
             setError("Gagal mengakses kamera/mikrofon. Pastikan izin telah diberikan.");
@@ -132,9 +191,7 @@ export function VideoRecorder() {
 
     const handleRetake = useCallback(() => {
         if (!canRetake) return;
-        // Stop any running stream/recording
         stopStream();
-        // Revoke old preview URL to free memory
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
         setRecordedBlob(null);
@@ -145,16 +202,9 @@ export function VideoRecorder() {
     const handleSubmit = useCallback(async () => {
         if (!previewUrl || !recordedBlob || uploading) return;
         setUploading(true);
-
-        // Start AI progress simulation
-        setAiProgressText(AI_STEPS[0].text);
-        setAiProgressPerc(AI_STEPS[0].prog);
-        const timers = AI_STEPS.slice(1).map(step =>
-            setTimeout(() => {
-                setAiProgressText(step.text);
-                setAiProgressPerc(step.prog);
-            }, step.time)
-        );
+        setAnalysisDone(false);
+        setJobStatuses({ upload: "running" });
+        setAiProgressPerc(AI_STEPS_CONFIG[0].prog - 5);
 
         try {
             // Step 1: Get signed upload params from server
@@ -162,7 +212,7 @@ export function VideoRecorder() {
             if (!sigRes.ok) throw new Error("Gagal mendapatkan parameter upload");
             const { timestamp, signature, folder, cloudName, apiKey } = await sigRes.json();
 
-            // Step 2: Upload DIRECTLY from browser to Cloudinary (no server bottleneck)
+            // Step 2: Upload directly to Cloudinary from browser
             const ext = recordedBlob.type.includes("mp4") ? "mp4" : "webm";
             const cloudForm = new FormData();
             cloudForm.append("file", recordedBlob, `interview.${ext}`);
@@ -176,8 +226,6 @@ export function VideoRecorder() {
                 { method: "POST", body: cloudForm }
             );
 
-            timers.forEach(clearTimeout);
-
             if (!cloudRes.ok) {
                 const err = await cloudRes.json();
                 throw new Error(err?.error?.message ?? "Upload Cloudinary gagal");
@@ -186,14 +234,19 @@ export function VideoRecorder() {
             const cloudData = await cloudRes.json();
             const videoUrl: string = cloudData.secure_url;
 
-            setAiProgressPerc(95);
-            setAiProgressText("Menyimpan hasil ke server HRD...");
+            setJobStatuses({ upload: "done" });
+            setAiProgressPerc(AI_STEPS_CONFIG[0].prog);
 
-            // Step 3: Save URL to database
+            // Step 3: Save URL to database and enqueue job
             const saveRes = await fetch("/api/interview/save-video", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ videoUrl, isFinal: !canRetake }),
+                body: JSON.stringify({
+                    videoUrl,
+                    questionId,
+                    questionIndex,
+                    isFinal: isLastQuestion,
+                }),
             });
 
             if (!saveRes.ok) {
@@ -202,38 +255,32 @@ export function VideoRecorder() {
             }
 
             const data = await saveRes.json();
-            setAiProgressPerc(100);
-            setAiProgressText("Selesai! ✓");
 
-            if (data.interview?.isSubmitted) {
-                setTimeout(() => router.push("/result"), 600);
-            } else {
-                setUploading(false);
-                setAiProgressText("");
-                setAiProgressPerc(0);
-            }
-        } catch (err: any) {
-            timers.forEach(clearTimeout);
-            alert(err?.message ?? "Terjadi kesalahan. Coba lagi.");
+            // Step 4: Start polling
+            setUploadJobId(data.jobId);
+
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : "Terjadi kesalahan. Coba lagi.";
+            showToast(errorMessage, "error", 5000);
             setUploading(false);
-            setAiProgressText("");
             setAiProgressPerc(0);
+            setJobStatuses({});
         }
-    }, [previewUrl, recordedBlob, uploading, canRetake, router]);
+    }, [previewUrl, recordedBlob, uploading, isLastQuestion, questionId, questionIndex, showToast]);
 
     const progressPct = `${(recordingSeconds / MAX_SECONDS) * 100}%`;
 
     return (
-        <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
 
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-xl font-bold mb-1">Pertanyaan Wawancara</h2>
+                    <h2 className="text-xl font-bold mb-1">Rekam Jawaban</h2>
                     <p className="text-white/60 text-sm">Rekam jawaban Anda. Maksimal 60 detik.</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold ${retakeCount >= MAX_RETAKE ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-[#151730] border-white/10"}`}>
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold ${retakeCount >= MAX_RETAKE ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-elevated border-white/10"}`}>
                         <RefreshCcw className="w-4 h-4" />
                         Retake: {retakeCount}/{MAX_RETAKE}
                     </div>
@@ -255,7 +302,6 @@ export function VideoRecorder() {
             {/* Video Player */}
             <div className="relative aspect-video w-full bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
                 {previewUrl ? (
-                    // Preview of recorded video
                     <video
                         key={previewUrl}
                         src={previewUrl}
@@ -265,7 +311,6 @@ export function VideoRecorder() {
                         className="w-full h-full object-cover"
                     />
                 ) : (
-                    // Live camera stream
                     <video
                         ref={videoRef}
                         autoPlay
@@ -291,7 +336,7 @@ export function VideoRecorder() {
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm gap-3">
                         <button
                             onClick={handleStart}
-                            className="bg-blue-600 hover:bg-blue-500 text-white w-20 h-20 rounded-full flex items-center justify-center transition-all hover:scale-105 group border-4 border-white/20 shadow-[0_0_30px_rgba(37,99,235,0.4)]"
+                            className="bg-white/10 hover:bg-white/20 text-white w-20 h-20 rounded-full flex items-center justify-center transition-all hover:scale-105 group border-4 border-white/20 shadow-[0_0_30px_rgba(37,99,235,0.4)]"
                         >
                             <Video className="w-8 h-8 group-hover:scale-110 transition-transform" />
                         </button>
@@ -314,25 +359,66 @@ export function VideoRecorder() {
             <div className="flex flex-col gap-4">
                 {/* AI Progress UI */}
                 {uploading && (
-                    <div className="w-full bg-[#0a0b1e] border border-violet-500/30 rounded-2xl p-6 shadow-[0_0_20px_rgba(124,58,237,0.15)] flex flex-col gap-4">
-                        <div className="flex items-center justify-between text-sm font-bold">
-                            <span className="text-violet-300 flex items-center gap-2">
-                                <div className="w-4 h-4 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
-                                {aiProgressText}
+                    <div className="w-full bg-background border border-emerald-500/30 rounded-2xl p-6 shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col gap-4">
+                        <div className="flex items-center justify-between text-sm font-bold border-b border-white/5 pb-4 mb-2">
+                            <span className="text-emerald-400 flex items-center gap-2">
+                                {!analysisDone && <div className="w-4 h-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />}
+                                {analysisDone ? "Selesai Menganalisis" : "AI Sedang Menganalisis"}
                             </span>
-                            <span className="text-white/50">{aiProgressPerc}%</span>
+                            <span className="text-emerald-400 font-mono text-lg">{aiProgressPerc}%</span>
                         </div>
-                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+
+                        {/* List of progress steps */}
+                        <div className="flex flex-col gap-3">
+                            {AI_STEPS_CONFIG.map((step) => {
+                                const status = jobStatuses[step.id] || "pending";
+                                const isDone = status === "done";
+                                const isRunning = status === "running";
+
+                                return (
+                                    <div key={step.id} className={`flex items-center justify-between text-sm font-medium transition-all duration-300 ${isDone ? "text-white" : isRunning ? "text-emerald-400" : "text-white/30"}`}>
+                                        <div className="flex items-center gap-3">
+                                            {isDone ? (
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                            ) : isRunning ? (
+                                                <div className="w-4 h-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+                                            ) : (
+                                                <div className="w-4 h-4 rounded-full border border-white/20" />
+                                            )}
+                                            <span>{step.label}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-4 h-2 w-full bg-white/5 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-gradient-to-r from-violet-600 to-indigo-500 transition-all duration-700 ease-out"
+                                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700 ease-out"
                                 style={{ width: `${aiProgressPerc}%` }}
                             />
                         </div>
-                        <p className="text-xs text-white/40 text-center uppercase tracking-widest font-bold">Mohon jangan tutup halaman ini</p>
+
+                        {!analysisDone ? (
+                            <p className="text-xs text-emerald-500/70 text-center uppercase tracking-widest font-bold mt-2">Mohon jangan tutup halaman ini</p>
+                        ) : (
+                            <button
+                                onClick={() => {
+                                    setUploading(false);
+                                    setUploadJobId(null);
+                                    setAnalysisDone(false);
+                                    setJobStatuses({});
+                                    if (onComplete) onComplete();
+                                }}
+                                className="mt-2 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            >
+                                {isLastQuestion ? "Selesai" : "Soal Selanjutnya"} <ChevronRight className="w-5 h-5" />
+                            </button>
+                        )}
                     </div>
                 )}
 
-                {/* Buttons */}
+                {/* Stop recording button */}
                 {isRecording && (
                     <button
                         onClick={handleStop}
@@ -342,6 +428,7 @@ export function VideoRecorder() {
                     </button>
                 )}
 
+                {/* Preview actions */}
                 {previewUrl && !uploading && (
                     <div className="flex gap-4 w-full">
                         <button
@@ -355,9 +442,13 @@ export function VideoRecorder() {
                         <button
                             onClick={handleSubmit}
                             disabled={uploading}
-                            className="flex-1 btn-primary bg-gradient-to-r from-blue-600 to-indigo-600 flex justify-center items-center gap-2"
+                            className="flex-1 btn-primary bg-gradient-to-r from-blue-600 to-white/10 flex justify-center items-center gap-2"
                         >
-                            Simpan & Lanjut <Send className="w-5 h-5" />
+                            {isLastQuestion ? (
+                                <>Simpan & Selesai <CheckCircle2 className="w-5 h-5" /></>
+                            ) : (
+                                <>Simpan & Lanjut <ChevronRight className="w-5 h-5" /></>
+                            )}
                         </button>
                     </div>
                 )}

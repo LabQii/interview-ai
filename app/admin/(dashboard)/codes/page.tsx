@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Key, Plus, Trash2, Clock, CheckCircle2, RefreshCw, Layers } from "lucide-react";
 import { formatTimer } from "@/lib/timer";
+import { useUIStore } from "@/store/useUIStore";
 
 interface RedeemCode {
     id: string;
@@ -20,6 +21,8 @@ export default function AdminCodes() {
     const [codes, setCodes] = useState<RedeemCode[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
+
+    const { showToast, showConfirm } = useUIStore();
 
     // Form state
     const [newCode, setNewCode] = useState("");
@@ -80,27 +83,39 @@ export default function AdminCodes() {
                 setPosition("");
                 setSelectedCategories([]);
                 loadCodes();
+                showToast("Kode ujian berhasil dibuat!", "success");
             } else {
                 const data = await res.json();
-                alert(data.error || "Gagal membuat kode");
+                showToast(data.error || "Gagal membuat kode", "error");
             }
         } catch (err) {
-            alert("Terjadi kesalahan jaringan");
+            showToast("Terjadi kesalahan jaringan", "error");
         }
     };
 
-    const handleDelete = async (id: string, codeStr: string) => {
-        if (!confirm(`Hapus kode ${codeStr}?`)) return;
-        try {
-            const res = await fetch("/api/admin/codes", {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id })
-            });
-            if (res.ok) loadCodes();
-        } catch (e) {
-            console.error(e);
-        }
+    const handleDelete = (id: string, codeStr: string) => {
+        showConfirm(
+            "Hapus Kode Ujian?",
+            `Anda yakin ingin menghapus kode ${codeStr}? TINDAKAN INI TIDAK BISA DIBATALKAN.`,
+            async () => {
+                try {
+                    const res = await fetch("/api/admin/codes", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id })
+                    });
+                    if (res.ok) {
+                        loadCodes();
+                        showToast(`Kode ${codeStr} berhasil dihapus.`, "success");
+                    } else {
+                        showToast("Gagal menghapus kode.", "error");
+                    }
+                } catch (e) {
+                    showToast("Terjadi kesalahan jaringan.", "error");
+                    console.error(e);
+                }
+            }
+        );
     };
 
     return (
@@ -128,7 +143,7 @@ export default function AdminCodes() {
             </div>
 
             {isCreating && (
-                <div className="card p-6 mb-8 border-violet-500/30">
+                <div className="card p-6 mb-8 border-white/10">
                     <h3 className="font-bold text-lg mb-6">Buat Kode Baru</h3>
                     <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -138,7 +153,7 @@ export default function AdminCodes() {
                                     type="text"
                                     value={newCode}
                                     onChange={e => setNewCode(e.target.value.toUpperCase())}
-                                    className="flex-1 font-mono tracking-widest bg-[#0a0b1e]/50 border border-white/10 rounded-xl p-3 focus:border-violet-500 outline-none"
+                                    className="flex-1 font-mono tracking-widest bg-white/5 border border-white/10 rounded-xl p-3 focus:border-white/20 outline-none"
                                     placeholder="XXXX-XXXX-XXXX"
                                     required
                                 />
@@ -152,7 +167,7 @@ export default function AdminCodes() {
                                 type="text"
                                 value={position}
                                 onChange={e => setPosition(e.target.value)}
-                                className="w-full bg-[#0a0b1e]/50 border border-white/10 rounded-xl p-3 focus:border-violet-500 outline-none"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:border-white/20 outline-none"
                                 placeholder="Misal: Frontend Developer"
                                 required
                             />
@@ -166,7 +181,7 @@ export default function AdminCodes() {
                                 type="number"
                                 value={duration}
                                 onChange={e => setDuration(parseInt(e.target.value))}
-                                className="w-full bg-[#0a0b1e]/50 border border-white/10 rounded-xl p-3 focus:border-violet-500 outline-none"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:border-white/20 outline-none"
                                 required
                                 min="60"
                             />
@@ -177,12 +192,12 @@ export default function AdminCodes() {
 
                         <div className="space-y-4">
                             <label className="text-xs font-bold text-white/50 uppercase">Tipe Kode</label>
-                            <label className="flex items-center gap-3 cursor-pointer p-3 border border-white/10 rounded-xl bg-[#0a0b1e]/50 hover:border-violet-500/50 transition-colors">
+                            <label className="flex items-center gap-3 cursor-pointer p-3 border border-white/10 rounded-xl bg-white/5 hover:border-white/20/50 transition-colors">
                                 <input
                                     type="checkbox"
                                     checked={isReusable}
                                     onChange={e => setIsReusable(e.target.checked)}
-                                    className="w-5 h-5 rounded border-white/20 text-violet-500 bg-transparent focus:ring-0 focus:ring-offset-0"
+                                    className="w-5 h-5 rounded border-white/20 text-white/60 bg-transparent focus:ring-0 focus:ring-offset-0"
                                 />
                                 <div>
                                     <div className="font-bold text-sm text-white/90">Permanen (Reusable)</div>
@@ -197,7 +212,7 @@ export default function AdminCodes() {
                                 <p className="text-xs text-white/40 mb-3">Jika tidak ada yang dipilih, maka SEMUA pertanyaan di Bank Soal akan dimasukkan ke kode ini.</p>
                                 <div className="flex flex-wrap gap-3">
                                     {availableCategories.map(cat => (
-                                        <label key={cat} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition-colors ${selectedCategories.includes(cat) ? 'bg-violet-600/20 border-violet-500 text-white' : 'border-white/10 text-white/50 hover:border-white/30'}`}>
+                                        <label key={cat} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition-colors ${selectedCategories.includes(cat) ? 'bg-white/10 border-white/20 text-white' : 'border-white/10 text-white/50 hover:border-white/30'}`}>
                                             <input
                                                 type="checkbox"
                                                 className="hidden"
@@ -233,7 +248,7 @@ export default function AdminCodes() {
 
                         <div className="flex justify-between items-start mb-6 pt-2">
                             <div>
-                                <h3 className="font-mono text-xl text-violet-300 tracking-wider font-bold mb-1">{code.code}</h3>
+                                <h3 className="font-mono text-xl text-white/90 tracking-wider font-bold mb-1">{code.code}</h3>
                                 <p className="text-sm font-medium text-white/70">{code.position}</p>
                             </div>
                         </div>

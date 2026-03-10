@@ -37,7 +37,7 @@ export default function AdminDashboard() {
 
                 <div className="flex gap-4">
                     <div className="card px-5 py-3 flex flex-col items-center min-w-[120px]">
-                        <span className="text-2xl font-bold text-blue-400">{participants.length}</span>
+                        <span className="text-2xl font-bold text-white/80">{participants.length}</span>
                         <span className="text-[10px] font-bold tracking-widest text-white/40">TOTAL KANDIDAT</span>
                     </div>
                 </div>
@@ -46,7 +46,7 @@ export default function AdminDashboard() {
             <div className="card p-6 mb-8">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
                     <h2 className="text-lg font-bold flex items-center gap-2">
-                        <Users className="w-5 h-5 text-blue-400" /> Daftar Peserta
+                        <Users className="w-5 h-5 text-white/80" /> Daftar Peserta
                     </h2>
 
                     <div className="relative w-full md:w-auto min-w-[300px]">
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
                             placeholder="Cari nama atau kode ujian..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500"
+                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-white/20"
                         />
                     </div>
                 </div>
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
                                         </td>
                                         <td className="p-4 text-center">
                                             {aiScore !== undefined && aiScore !== null ? (
-                                                <span className="px-2 py-1 rounded bg-violet-500/10 text-violet-400 text-xs font-bold">{aiScore.toFixed(1)}</span>
+                                                <span className="px-2 py-1 rounded bg-white/5 text-white/80 text-xs font-bold">{aiScore.toFixed(1)}</span>
                                             ) : (
                                                 <span className="text-white/30">-</span>
                                             )}
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
                                         <td className="p-4 text-right">
                                             <Link
                                                 href={`/admin/participants/${p.id}`}
-                                                className="inline-flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                                                className="inline-flex items-center gap-1 text-sm text-white/80 hover:text-blue-300 transition-colors"
                                             >
                                                 Lihat <ChevronRight className="w-4 h-4" />
                                             </Link>

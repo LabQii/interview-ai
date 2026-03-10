@@ -32,9 +32,9 @@ export default async function TestSummaryPage() {
     const unansweredQuestions = Math.max(0, totalQuestions - answeredQuestions);
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0b1e]">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-background">
             <div className="card-elevated max-w-xl w-full p-8 md:p-10 text-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
 
                 <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/20">
                     <CheckCircle2 className="w-10 h-10 text-green-500" />
@@ -48,9 +48,9 @@ export default async function TestSummaryPage() {
                 </p>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-6 flex flex-col items-center gap-2">
-                        <BookOpen className="w-6 h-6 text-violet-400" />
-                        <span className="text-3xl font-bold text-violet-400">{answeredQuestions}</span>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center gap-2">
+                        <BookOpen className="w-6 h-6 text-white/80" />
+                        <span className="text-3xl font-bold text-white/80">{answeredQuestions}</span>
                         <span className="text-xs text-white/50 uppercase tracking-wider font-bold">Terjawab</span>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center gap-2">
@@ -65,7 +65,7 @@ export default async function TestSummaryPage() {
                     <span className="font-bold text-white/70">{totalQuestions}</span>
                 </div>
 
-                <div className="p-4 bg-violet-500/10 border border-violet-500/20 rounded-xl mb-8 text-sm text-white/80">
+                <div className="p-4 bg-white/5 border border-white/10 rounded-xl mb-8 text-sm text-white/80">
                     Tahap selanjutnya adalah <strong>AI Video Interview</strong>. Pastikan kamera dan mikrofon Anda berfungsi dengan baik.
                 </div>
 

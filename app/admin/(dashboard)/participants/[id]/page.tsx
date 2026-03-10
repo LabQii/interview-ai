@@ -27,7 +27,7 @@ export default function ParticipantDetail() {
     if (loading) return <div className="p-8 animate-pulse text-white/50">Memuat detail peserta...</div>;
     if (!data?.participant) return <div className="p-8 text-red-400">Peserta tidak ditemukan.</div>;
 
-    const { participant, answers, violations } = data;
+    const { participant, answers, violations, analyses } = data;
     const test = participant.testSession;
     const interview = participant.interview;
     const code = test?.redeemCode || participant.redeemCode?.code || "-";
@@ -47,11 +47,11 @@ export default function ParticipantDetail() {
             </button>
 
             {/* Profile Header */}
-            <div className="card-elevated p-8 mb-8 flex flex-col md:flex-row items-start md:items-center gap-6 relative overflow-hidden text-left border-blue-500/20">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+            <div className="card-elevated p-8 mb-8 flex flex-col md:flex-row items-start md:items-center gap-6 relative overflow-hidden text-left border-white/20/20">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
 
-                <div className="w-20 h-20 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center shrink-0">
-                    <User className="w-10 h-10 text-blue-400" />
+                <div className="w-20 h-20 bg-white/20/10 border border-white/20/20 rounded-2xl flex items-center justify-center shrink-0">
+                    <User className="w-10 h-10 text-white/80" />
                 </div>
 
                 <div className="flex-1">
@@ -70,9 +70,9 @@ export default function ParticipantDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 {/* Test Results */}
-                <div className="card p-6 border-violet-500/20">
+                <div className="card p-6 border-white/10">
                     <h3 className="text-white/60 text-xs font-bold tracking-widest mb-6 flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-violet-400" /> HASIL UJIAN TERTULIS
+                        <Activity className="w-4 h-4 text-white/80" /> HASIL UJIAN TERTULIS
                     </h3>
 
                     {test ? (
@@ -87,7 +87,7 @@ export default function ParticipantDetail() {
                                         {test.isSubmitted ? (
                                             <span className="text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Selesai</span>
                                         ) : test.startedAt ? (
-                                            <span className="text-blue-400 flex items-center gap-1"><Activity className="w-3 h-3" /> Sedang Berlangsung</span>
+                                            <span className="text-white/80 flex items-center gap-1"><Activity className="w-3 h-3" /> Sedang Berlangsung</span>
                                         ) : (
                                             <span className="text-white/40">Belum Mulai</span>
                                         )}
@@ -125,9 +125,9 @@ export default function ParticipantDetail() {
                 </div>
 
                 {/* Interview Results */}
-                <div className="card p-6 border-indigo-500/20">
+                <div className="card p-6 border-white/10">
                     <h3 className="text-white/60 text-xs font-bold tracking-widest mb-6 flex items-center gap-2">
-                        <FileVideo className="w-4 h-4 text-indigo-400" /> HASIL WAWANCARA AI
+                        <FileVideo className="w-4 h-4 text-white/80" /> HASIL WAWANCARA AI
                     </h3>
 
                     {interview ? (
@@ -140,42 +140,28 @@ export default function ParticipantDetail() {
                                 <div className="text-right">
                                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 text-xs font-bold mb-2">
                                         {interview.isSubmitted ? (
-                                            <span className="text-indigo-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Dikumpulkan</span>
+                                            <span className="text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Selesai</span>
                                         ) : interview.startedAt ? (
-                                            <span className="text-video-400 flex items-center gap-1"><Activity className="w-3 h-3" /> Merekam</span>
+                                            <span className="text-white/80 flex items-center gap-1"><Activity className="w-3 h-3" /> Diproses</span>
                                         ) : (
-                                            <span className="text-white/40">Belum Mulai</span>
+                                            <span className="text-white/40">Belum Dinilai</span>
                                         )}
-                                    </div>
-                                    <div className="text-sm text-white/50">
-                                        Retake: <span className="text-white font-bold">{interview.totalRetake}/{interview.maxRetake}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {interview.finalVideoUrl ? (
-                                <a
-                                    href={interview.finalVideoUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors mb-4 font-bold text-sm"
-                                >
-                                    <FileVideo className="w-4 h-4" /> Tonton Rekaman Wawancara
-                                </a>
-                            ) : (
-                                <div className="w-full p-3 rounded-lg bg-white/5 text-white/30 text-center text-sm mb-4">
-                                    Video belum tersedia
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                                    <span className="text-white/50 text-sm">Waktu Mulai</span>
+                                    <span className="font-mono text-sm">{interview.startedAt ? new Date(interview.startedAt).toLocaleString('id-ID') : '-'}</span>
                                 </div>
-                            )}
-
-                            {interview.aiAnalysis && (
-                                <div className="mt-4">
-                                    <h4 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Analisis AI (Speech-to-Text)</h4>
-                                    <p className="text-sm text-white/80 leading-relaxed bg-[#0a0b1e]/50 p-4 rounded-xl border border-white/5 max-h-[150px] overflow-y-auto">
-                                        {interview.aiAnalysis}
-                                    </p>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-white/50 text-sm">Retake Log</span>
+                                    <span className="font-bold text-sm text-white/80">
+                                        {interview.totalRetake}/{interview.maxRetake}
+                                    </span>
                                 </div>
-                            )}
+                            </div>
                         </>
                     ) : (
                         <div className="p-8 text-center text-white/30 border border-white/5 border-dashed rounded-xl h-full flex items-center justify-center">
@@ -185,6 +171,82 @@ export default function ParticipantDetail() {
                 </div>
             </div>
 
+            {/* Rincian Analisis Per Soal - Moved outside grid for better UX */}
+            {analyses && analyses.length > 0 && (
+                <div className="card p-6 mb-8">
+                    <h3 className="text-white/60 text-xs font-bold tracking-widest mb-6 border-b border-white/5 pb-4 flex items-center gap-2">
+                        <FileVideo className="w-4 h-4 text-white/80" /> RINCIAN ANALISIS WAWANCARA PER SOAL
+                    </h3>
+
+                    <div className="space-y-6">
+                        {analyses.map((analysis: any, idx: number) => (
+                            <div key={analysis.id} className="bg-white/5 p-5 rounded-2xl border border-white/5 space-y-4">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs text-white/40 font-bold mb-1">SOAL {idx + 1}</span>
+                                        <a href={analysis.videoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-white/80 hover:text-white text-sm font-bold transition-colors">
+                                            <FileVideo className="w-4 h-4" /> Buka Video Jawaban
+                                        </a>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="flex flex-col items-center bg-white/5 rounded-lg p-2 min-w-[70px]">
+                                            <span className="text-xs text-white/50 mb-1">Komunikasi</span>
+                                            <span className="text-lg font-bold text-white/80">{analysis.communicationScore || '-'}</span>
+                                        </div>
+                                        <div className="flex flex-col items-center bg-white/5 rounded-lg p-2 min-w-[70px]">
+                                            <span className="text-xs text-white/50 mb-1">Relevansi</span>
+                                            <span className="text-lg font-bold text-white/80">{analysis.relevanceScore || '-'}</span>
+                                        </div>
+                                        <div className="flex flex-col items-center bg-white/10 border border-white/20 rounded-lg p-2 min-w-[70px]">
+                                            <span className="text-xs text-white/90 mb-1">Bobot</span>
+                                            <span className="text-lg font-bold text-white">{analysis.overallScore || '-'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 pt-3 border-t border-white/5">
+                                    {analysis.aiResume && (
+                                        <div>
+                                            <h5 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">Resume Jawaban</h5>
+                                            <p className="text-sm text-white/80 leading-relaxed bg-white/[0.02] p-4 rounded-xl border border-white/5">
+                                                {analysis.aiResume}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {analysis.aiHighlights && analysis.aiHighlights.length > 0 && (
+                                            <div className="bg-emerald-500/5 border border-emerald-500/10 p-4 rounded-xl">
+                                                <h5 className="text-xs font-bold text-emerald-500/80 uppercase tracking-widest mb-2">Poin Positif</h5>
+                                                <ul className="text-sm text-white/80 space-y-1.5 pl-4 list-disc marker:text-emerald-500/50">
+                                                    {analysis.aiHighlights.map((hl: string, i: number) => <li key={i}>{hl}</li>)}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {analysis.aiWeaknesses && analysis.aiWeaknesses.length > 0 && (
+                                            <div className="bg-orange-500/5 border border-orange-500/10 p-4 rounded-xl">
+                                                <h5 className="text-xs font-bold text-orange-500/80 uppercase tracking-widest mb-2">Area Perbaikan</h5>
+                                                <ul className="text-sm text-white/80 space-y-1.5 pl-4 list-disc marker:text-orange-500/50">
+                                                    {analysis.aiWeaknesses.map((wk: string, i: number) => <li key={i}>{wk}</li>)}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {analysis.recommendation && (
+                                        <div className="bg-white/5 border border-white/10 p-4 rounded-xl mt-2 flex flex-col gap-1">
+                                            <h5 className="text-sm font-bold text-white/90">Rekomendasi AI: {analysis.recommendation}</h5>
+                                            <p className="text-sm text-white/60">{analysis.recommendationReason}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+
             {/* Answers Detail Log */}
             <div className="card p-6">
                 <h3 className="text-white/60 text-xs font-bold tracking-widest mb-6 border-b border-white/5 pb-4">LOG JAWABAN PESERTA</h3>
@@ -192,7 +254,7 @@ export default function ParticipantDetail() {
                 {answers.length > 0 ? (
                     <div className="space-y-4">
                         {answers.map((ans: any, i: number) => (
-                            <div key={i} className="flex gap-4 p-4 rounded-xl bg-[#0a0b1e]/50 border border-white/5">
+                            <div key={i} className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
                                 <div className="w-8 h-8 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-white/50">
                                     {i + 1}
                                 </div>

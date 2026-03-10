@@ -1,0 +1,30 @@
+
+> hrd-test@0.1.0 worker
+> npx tsx workers/interview-analysis.worker.ts
+
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[Worker] 🚀 Interview Analysis Worker started. Waiting for jobs...
+[Worker] Starting job 10 for user 20c341b6-790e-419d-9434-66534822b6d9
+[Worker] Step: fetch
+[Worker] Downloading video for question 1
+[Worker] Transcribing question 1
+[Worker] Analyzing with Groq for question 1
+[Worker] Saved analysis for question 1
+[Worker] Job 10 completed.
+[Worker] ✓ Job 10 completed
+[Worker] Starting job 12 for user 8361ec15-4264-4bab-9fda-23b6effe3904
+[Worker] Step: fetch
+[Worker] Downloading video for question 1
+[Worker] Transcribing question 1
+[Worker] Analyzing with Groq for question 1
+[Worker] Saved analysis for question 1
+[Worker] Job 12 completed.
+[Worker] ✓ Job 12 completed
+[Worker] Starting job 13 for user 8361ec15-4264-4bab-9fda-23b6effe3904
+[Worker] Step: fetch
+[Worker] Downloading video for question 1
+[Worker] Transcribing question 1
+[Worker] Analyzing with Groq for question 1
+[Worker] Saved analysis for question 1
+[Worker] Job 13 completed.
+[Worker] ✓ Job 13 completed

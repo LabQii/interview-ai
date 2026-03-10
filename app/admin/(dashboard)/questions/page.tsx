@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Edit2, Trash2, Save, X, RefreshCw, FolderOpen, Tag, Grid, FileText } from "lucide-react";
+import { useUIStore } from "@/store/useUIStore";
 
 interface Question {
     id: string;
@@ -24,6 +25,8 @@ export default function AdminQuestions() {
     const [isEditing, setIsEditing] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<Partial<Question>>({});
     const [isCreating, setIsCreating] = useState(false);
+
+    const { showToast, showConfirm } = useUIStore();
 
     // Category Filter States
     const [activeCategory, setActiveCategory] = useState<string>("Semua");
@@ -79,26 +82,39 @@ export default function AdminQuestions() {
                 setIsCreating(false);
                 setEditForm({});
                 loadQuestions();
+                showToast("Soal berhasil disimpan!", "success");
             } else {
-                alert("Gagal menyimpan soal");
+                showToast("Gagal menyimpan soal", "error");
             }
         } catch (e) {
+            showToast("Terjadi kesalahan jaringan", "error");
             console.error(e);
         }
     };
 
-    const handleDeleteQuestion = async (id: string) => {
-        if (!confirm("Yakin ingin menghapus soal ini?")) return;
-        try {
-            const res = await fetch("/api/admin/questions", {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id })
-            });
-            if (res.ok) loadQuestions();
-        } catch (e) {
-            console.error(e);
-        }
+    const handleDeleteQuestion = (id: string) => {
+        showConfirm(
+            "Hapus Soal?",
+            "Yakin ingin menghapus soal ini? Tindakan ini tidak dapat dibatalkan.",
+            async () => {
+                try {
+                    const res = await fetch("/api/admin/questions", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id })
+                    });
+                    if (res.ok) {
+                        loadQuestions();
+                        showToast("Soal berhasil dihapus.", "success");
+                    } else {
+                        showToast("Gagal menghapus soal.", "error");
+                    }
+                } catch (e) {
+                    showToast("Terjadi kesalahan jaringan.", "error");
+                    console.error(e);
+                }
+            }
+        );
     };
 
     const startEditQuestion = (q: Question) => {
@@ -145,33 +161,41 @@ export default function AdminQuestions() {
                 setEditingCategory(null);
                 setNewCategoryName("");
                 loadQuestions(); // Reload to reflect changes globally
+                showToast(`Kategori berhasil diubah menjadi ${newCategoryName.toUpperCase()}`, "success");
             } else {
-                alert("Gagal mengubah nama kategori");
+                showToast("Gagal mengubah nama kategori", "error");
             }
         } catch (e) {
+            showToast("Terjadi kesalahan jaringan", "error");
             console.error(e);
         }
     };
 
-    const handleDeleteCategory = async (catName: string) => {
-        if (!confirm(`Peringatan: Anda akan menghapus SELURUH soal yang berada di kategori "${catName}". Lanjutkan?`)) return;
+    const handleDeleteCategory = (catName: string) => {
+        showConfirm(
+            "Hapus Kategori?",
+            `Peringatan: Anda akan menghapus SELURUH soal yang berada di kategori "${catName}". Lanjutkan?`,
+            async () => {
+                try {
+                    const res = await fetch("/api/admin/questions/categories", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ category: catName })
+                    });
 
-        try {
-            const res = await fetch("/api/admin/questions/categories", {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ category: catName })
-            });
-
-            if (res.ok) {
-                if (activeCategory === catName) setActiveCategory("Semua");
-                loadQuestions();
-            } else {
-                alert("Gagal menghapus kategori");
+                    if (res.ok) {
+                        if (activeCategory === catName) setActiveCategory("Semua");
+                        loadQuestions();
+                        showToast(`Kategori ${catName} dan isinya berhasil dihapus.`, "success");
+                    } else {
+                        showToast("Gagal menghapus kategori.", "error");
+                    }
+                } catch (e) {
+                    showToast("Terjadi kesalahan jaringan.", "error");
+                    console.error(e);
+                }
             }
-        } catch (e) {
-            console.error(e);
-        }
+        );
     };
 
     const startRenameCategory = (catName: string) => {
@@ -185,7 +209,7 @@ export default function AdminQuestions() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Manajemen Soal</h1>
-                    <p className="text-white/50 text-sm">Organisasi soal berdasarkan kategori untuk Tes Elite HRD.</p>
+                    <p className="text-white/50 text-sm">Organisasi soal berdasarkan kategori untuk Tes Labqii.</p>
                 </div>
 
                 <div className="flex gap-3">
@@ -199,9 +223,9 @@ export default function AdminQuestions() {
             </div>
 
             {/* Top Navigation / Category Tabs */}
-            <div className="mb-8 overflow-hidden rounded-2xl bg-[#0a0b1e]/60 border border-white/5 shadow-2xl">
-                <div className="flex items-center gap-3 px-6 py-4 border-b border-white/5 bg-[#0f1027]">
-                    <FolderOpen className="w-5 h-5 text-violet-400" />
+            <div className="mb-8 overflow-hidden rounded-2xl bg-white/10 border border-white/5 shadow-2xl">
+                <div className="flex items-center gap-3 px-6 py-4 border-b border-white/5 bg-card">
+                    <FolderOpen className="w-5 h-5 text-white/80" />
                     <h3 className="font-bold text-sm tracking-wider uppercase text-white/70">Filter Kategori</h3>
                 </div>
 
@@ -210,7 +234,7 @@ export default function AdminQuestions() {
                     <button
                         onClick={() => setActiveCategory("Semua")}
                         className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeCategory === "Semua"
-                            ? "bg-violet-600 text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]"
+                            ? "bg-white/10 text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]"
                             : "bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/70"
                             }`}
                     >
@@ -226,14 +250,14 @@ export default function AdminQuestions() {
 
                         if (isCatEditing) {
                             return (
-                                <div key={cat} className="flex items-center bg-[#0a0b1e] border border-violet-500 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(124,58,237,0.2)]">
+                                <div key={cat} className="flex items-center bg-background border border-white/20 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(124,58,237,0.2)]">
                                     <input
                                         type="text"
                                         autoFocus
                                         value={newCategoryName}
                                         onChange={(e) => setNewCategoryName(e.target.value.toUpperCase())}
                                         onKeyDown={(e) => e.key === 'Enter' && handleRenameCategory(cat)}
-                                        className="bg-transparent text-sm font-bold px-4 py-2.5 outline-none w-32 md:w-40 uppercase text-violet-300"
+                                        className="bg-transparent text-sm font-bold px-4 py-2.5 outline-none w-32 md:w-40 uppercase text-white/90"
                                     />
                                     <button onClick={() => handleRenameCategory(cat)} className="p-2.5 text-emerald-400 hover:bg-emerald-500/20 transition-colors">
                                         <Save className="w-4 h-4" />
@@ -250,16 +274,16 @@ export default function AdminQuestions() {
                                 <button
                                     onClick={() => setActiveCategory(cat)}
                                     className={`px-5 py-2.5 rounded-l-xl font-bold text-sm transition-all flex items-center gap-2 ${isCatActive
-                                        ? "bg-violet-600 text-white shadow-[0_0_15px_rgba(124,58,237,0.2)]"
+                                        ? "bg-white/10 text-white shadow-[0_0_15px_rgba(124,58,237,0.2)]"
                                         : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80 border border-transparent hover:border-white/10"
                                         }`}
                                 >
-                                    <Tag className={`w-4 h-4 ${isCatActive ? 'text-white' : 'text-violet-400'}`} /> {cat}
+                                    <Tag className={`w-4 h-4 ${isCatActive ? 'text-white' : 'text-white/80'}`} /> {cat}
                                     <span className="bg-black/20 px-2 py-0.5 rounded-full text-xs font-mono ml-1">{count}</span>
                                 </button>
 
                                 {/* CRUD Actions for Category (Rename / Delete) */}
-                                <div className={`flex items-stretch rounded-r-xl border-l border-white/5 overflow-hidden transition-all duration-300 ${isCatActive ? "bg-violet-700/50" : "bg-white/5"
+                                <div className={`flex items-stretch rounded-r-xl border-l border-white/5 overflow-hidden transition-all duration-300 ${isCatActive ? "bg-white/10" : "bg-white/5"
                                     }`}>
                                     <button
                                         onClick={() => startRenameCategory(cat)}
@@ -284,10 +308,10 @@ export default function AdminQuestions() {
 
             {/* Create / Edit SOAL Form */}
             {(isCreating || isEditing) && (
-                <div className="card p-6 mb-8 border-violet-500/30 ring-4 ring-violet-500/10">
+                <div className="card p-6 mb-8 border-white/10 ring-4 ring-white/5">
                     <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center text-violet-400">
+                            <div className="w-8 h-8 rounded-lg bg-white/20/20 flex items-center justify-center text-white/80">
                                 {isCreating ? <Plus className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
                             </div>
                             <h3 className="font-bold text-lg">{isCreating ? "Tambah Soal Baru" : "Edit Soal"}</h3>
@@ -303,7 +327,7 @@ export default function AdminQuestions() {
                             <textarea
                                 value={editForm.question || ""}
                                 onChange={e => setEditForm({ ...editForm, question: e.target.value })}
-                                className="w-full bg-[#0a0b1e]/50 border border-white/10 rounded-xl p-4 min-h-[120px] focus:border-violet-500 focus:bg-[#0a0b1e]/80 transition-all outline-none"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 min-h-[120px] focus:border-white/20 focus:bg-white/10 transition-all outline-none"
                                 placeholder="Tuliskan pertanyaan disini..."
                             />
                         </div>
@@ -315,7 +339,7 @@ export default function AdminQuestions() {
                                     type="text"
                                     value={(editForm as any)[`option${opt}`] || ""}
                                     onChange={e => setEditForm({ ...editForm, [`option${opt}`]: e.target.value })}
-                                    className="w-full bg-[#0a0b1e]/50 border border-white/10 rounded-xl px-4 pt-8 pb-3 focus:border-violet-500 focus:bg-[#0a0b1e]/80 transition-all outline-none"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 pt-8 pb-3 focus:border-white/20 focus:bg-white/10 transition-all outline-none"
                                     placeholder={`Tulis jawaban opsi ${opt}`}
                                 />
                             </div>
@@ -326,7 +350,7 @@ export default function AdminQuestions() {
                             <select
                                 value={editForm.correct || "A"}
                                 onChange={e => setEditForm({ ...editForm, correct: e.target.value })}
-                                className="w-full bg-[#0a0b1e]/50 border border-white/10 rounded-xl p-3 focus:border-violet-500 outline-none font-bold text-emerald-400 [&>option]:bg-[#0f1027]"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-12 appearance-none focus:border-white/20 outline-none font-bold text-emerald-400 [&>option]:bg-card"
                             >
                                 <option value="A">Jawaban A Benar</option>
                                 <option value="B">Jawaban B Benar</option>
@@ -344,7 +368,7 @@ export default function AdminQuestions() {
                                 type="number"
                                 value={editForm.duration || 60}
                                 onChange={e => setEditForm({ ...editForm, duration: parseInt(e.target.value) })}
-                                className="w-full bg-[#0a0b1e]/50 border border-white/10 rounded-xl p-3 focus:border-violet-500 outline-none font-mono"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:border-white/20 outline-none font-mono"
                                 min="10"
                             />
                         </div>
@@ -359,7 +383,7 @@ export default function AdminQuestions() {
                                     type="text"
                                     value={editForm.category || ""}
                                     onChange={e => setEditForm({ ...editForm, category: e.target.value.toUpperCase() })}
-                                    className="w-full bg-[#0a0b1e]/50 border border-white/10 rounded-xl pl-11 pr-4 py-3 focus:border-violet-500 outline-none uppercase font-bold text-violet-300 placeholder:text-white/20 placeholder:font-normal placeholder:capitalize"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 focus:border-white/20 outline-none uppercase font-bold text-white/90 placeholder:text-white/20 placeholder:font-normal placeholder:capitalize"
                                     placeholder="Kategori / Topik"
                                 />
                             </div>
@@ -386,10 +410,10 @@ export default function AdminQuestions() {
                 ) : (
                     <div className="space-y-4">
                         {filteredQuestions.map((q, idx) => (
-                            <div key={q.id} className="card p-6 border-white/5 hover:border-violet-500/30 transition-all hover:bg-white/[0.03]">
+                            <div key={q.id} className="card p-6 border-white/5 hover:border-white/10 transition-all hover:bg-white/[0.03]">
                                 <div className="flex justify-between items-start gap-6">
                                     <div className="flex gap-4 items-start flex-1">
-                                        <div className="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-400 flex items-center justify-center font-bold shrink-0 border border-violet-500/20">
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 text-white/80 flex items-center justify-center font-bold shrink-0 border border-white/10">
                                             {idx + 1}
                                         </div>
                                         <div className="flex-1">
@@ -404,14 +428,14 @@ export default function AdminQuestions() {
                                                 <span className="flex items-center gap-1 bg-black/40 px-3 py-1.5 rounded-md border border-white/5">
                                                     ⏳ {q.duration}s
                                                 </span>
-                                                <span className="flex items-center gap-1.5 bg-violet-500/10 text-violet-300 px-3 py-1.5 rounded-md border border-violet-500/20 shadow-[0_0_10px_rgba(124,58,237,0.1)]">
+                                                <span className="flex items-center gap-1.5 bg-white/5 text-white/90 px-3 py-1.5 rounded-md border border-white/10 shadow-[0_0_10px_rgba(124,58,237,0.1)]">
                                                     <Tag className="w-3 h-3" /> {q.category || "TANPA KATEGORI"}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <button onClick={() => startEditQuestion(q)} className="p-2.5 bg-white/5 hover:bg-blue-500/20 text-white/50 hover:text-blue-400 rounded-lg transition-colors border border-transparent hover:border-blue-500/30">
+                                        <button onClick={() => startEditQuestion(q)} className="p-2.5 bg-white/5 hover:bg-white/20/20 text-white/50 hover:text-white/80 rounded-lg transition-colors border border-transparent hover:border-white/20/30">
                                             <Edit2 className="w-4 h-4" />
                                         </button>
                                         <button onClick={() => handleDeleteQuestion(q.id)} className="p-2.5 bg-white/5 hover:bg-red-500/20 text-white/50 hover:text-red-400 rounded-lg transition-colors border border-transparent hover:border-red-500/30">
@@ -423,7 +447,7 @@ export default function AdminQuestions() {
                         ))}
 
                         {!isCreating && filteredQuestions.length === 0 && (
-                            <div className="text-center p-16 border border-white/10 border-dashed rounded-3xl bg-[#0a0b1e]/50 flex flex-col items-center justify-center">
+                            <div className="text-center p-16 border border-white/10 border-dashed rounded-3xl bg-white/5 flex flex-col items-center justify-center">
                                 <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 text-white/20">
                                     <FileText className="w-8 h-8" />
                                 </div>

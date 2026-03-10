@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldAlert, LogIn, Command } from "lucide-react";
+import { ShieldAlert, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
+import { Logo } from "@/components/Logo";
 
 export default function AdminLogin() {
     const [username, setUsername] = useState("");
@@ -40,23 +41,17 @@ export default function AdminLogin() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0b1e] text-white flex items-center justify-center p-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -ml-20 -mb-20"></div>
+        <div className="min-h-screen bg-background text-white flex items-center justify-center p-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10/10 rounded-full blur-3xl -ml-20 -mb-20"></div>
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="card-elevated p-10 max-w-md w-full border-blue-500/20 relative z-10"
+                className="card-elevated p-10 max-w-md w-full border-white/20/20 relative z-10"
             >
                 <div className="flex items-center justify-center gap-3 mb-8">
-                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.4)]">
-                        <Command className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-2xl font-bold tracking-tight leading-none">Admin</span>
-                        <span className="text-xs uppercase font-bold tracking-widest text-blue-400">Portal</span>
-                    </div>
+                    <Logo className="w-8 h-8" textClassName="text-2xl font-bold tracking-tight" />
                 </div>
 
                 <form onSubmit={handleLogin} className="flex flex-col gap-5">
@@ -67,7 +62,7 @@ export default function AdminLogin() {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             placeholder="admin"
-                            className="w-full bg-[#0f1027] border border-white/10 rounded-xl py-4 px-4 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-white/20"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white/90 font-medium focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all placeholder:text-white/20"
                             required
                         />
                     </div>
@@ -79,7 +74,7 @@ export default function AdminLogin() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            className="w-full bg-[#0f1027] border border-white/10 rounded-xl py-4 px-4 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-white/20"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white/90 font-medium focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all placeholder:text-white/20"
                             required
                         />
                     </div>

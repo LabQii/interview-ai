@@ -6,11 +6,13 @@ import { useGlobalTimer } from "@/hooks/useGlobalTimer";
 import { useQuestionTimer } from "@/hooks/useQuestionTimer";
 import { usePreventBrowserNavigation } from "@/hooks/usePreventBrowserNavigation";
 import { useTestStore } from "@/store/testStore";
+import { useUIStore } from "@/store/useUIStore";
 import { saveAnswer } from "@/server/actions/answers";
 import { submitTest } from "@/server/actions/testSession";
 import { GlobalTimer } from "@/components/timer/GlobalTimer";
 import { ShieldAlert, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Logo } from "@/components/Logo";
 
 interface Question {
     id: string;
@@ -38,6 +40,7 @@ export function TestView({
     const router = useRouter();
     const [warnings, setWarnings] = useState(tabSwitchWarnings);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const showToast = useUIStore((state) => state.showToast);
 
     const {
         currentIndex,
@@ -70,10 +73,10 @@ export function TestView({
         onTabSwitch: (count, autoSubmit) => {
             setWarnings(count);
             if (autoSubmit) {
-                alert("Batas perpindahan tab terlampaui. Tes otomatis diselesaikan.");
+                showToast("Batas perpindahan tab terlampaui. Tes otomatis diselesaikan.", "error", 5000);
                 submitTest().then(() => router.push("/test/summary"));
             } else {
-                alert(`PERINGATAN: Anda dilarang berpindah tab. Sisa peringatan: ${3 - count}`);
+                showToast(`PERINGATAN: Anda dilarang berpindah tab. Dideteksi: ${count}/3`, "warning", 4000);
             }
         }
     });
@@ -118,15 +121,14 @@ export function TestView({
     }, 0);
 
     return (
-        <div className="min-h-screen flex flex-col bg-[#0a0b1e]">
+        <div className="min-h-screen flex flex-col bg-background">
             {/* Top Navigation */}
-            <header className="fixed top-0 left-0 right-0 h-20 bg-[#0f1027]/80 backdrop-blur-md border-b border-white/5 z-40 px-6 flex items-center justify-between">
+            <header className="fixed top-0 left-0 right-0 h-20 bg-card/80 backdrop-blur-md border-b border-white/5 z-40 px-6 flex items-center justify-between">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
-                        <ShieldAlert className={`w-5 h-5 ${warnings > 0 ? "text-red-500" : "text-violet-500"}`} />
-                        <span className="text-sm font-semibold tracking-wide text-white/50">
-                            HRD TERMINAL <span className="text-white/20 ml-2">v4.2.0</span>
-                        </span>
+                        <ShieldAlert className={`w-5 h-5 ${warnings > 0 ? "text-red-500" : "hidden"}`} />
+                        <Logo className="w-6 h-6" textClassName="text-sm font-semibold tracking-wide text-white/50" />
+                        <span className="text-sm font-semibold tracking-wide text-white/20 ml-2">v4.2.0</span>
                     </div>
                     {warnings > 0 && (
                         <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full text-xs font-bold animate-pulse">
@@ -142,7 +144,7 @@ export function TestView({
                 {/* Left Content (Question Box) */}
                 <div className="col-span-1 lg:col-span-3">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xs font-bold tracking-widest text-violet-400 bg-violet-500/10 px-3 py-1.5 rounded-full border border-violet-500/20">
+                        <h2 className="text-xs font-bold tracking-widest text-white/80 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
                             PERTANYAAN {currentIndex + 1}/{questions.length}
                         </h2>
                     </div>
@@ -175,8 +177,8 @@ export function TestView({
                                                 key={opt}
                                                 onClick={() => handleSelectOption(opt)}
                                                 className={`flex items-center gap-4 p-5 rounded-2xl border text-left transition-all ${isSelected
-                                                    ? "bg-violet-600/20 border-violet-500 shadow-[0_0_15px_rgba(124,58,237,0.2)]"
-                                                    : "bg-[#0a0b1e]/50 border-white/5 hover:bg-white/[0.03] hover:border-white/20"
+                                                    ? "bg-white/10 border-white/20 shadow-[0_0_15px_rgba(124,58,237,0.2)]"
+                                                    : "bg-white/5 border-white/5 hover:bg-white/[0.03] hover:border-white/20"
                                                     }`}
                                             >
                                                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? "border-violet-400 bg-violet-400/20" : "border-white/20"
@@ -241,7 +243,7 @@ export function TestView({
                     {/* Question Navigation Panel */}
                     <div className="card p-6">
                         <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
-                            <div className="w-3 h-3 bg-violet-500 rounded-sm" /> Navigasi Soal
+                            <div className="w-3 h-3 bg-white/20 rounded-sm" /> Navigasi Soal
                         </h4>
                         <p className="text-xs text-white/30 mb-4">Soal dikerjakan secara berurutan</p>
                         <div className="grid grid-cols-5 gap-2">
@@ -256,7 +258,7 @@ export function TestView({
                                         className={`h-10 rounded-lg text-sm font-bold flex items-center justify-center transition-all ${isCurrent
                                             ? "bg-white text-black ring-2 ring-white ring-offset-2 ring-offset-[#0a0b1e]"
                                             : isAnswered
-                                                ? "bg-violet-600/80 text-white"
+                                                ? "bg-white/10/80 text-white"
                                                 : "bg-white/5 text-white/20 border border-white/5 opacity-50"
                                             }`}
                                     >

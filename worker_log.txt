@@ -1,0 +1,70 @@
+
+> hrd-test@0.1.0 worker
+> npx tsx workers/interview-analysis.worker.ts
+
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[Worker] 🚀 Interview Analysis Worker started. Waiting for jobs...
+[Worker] Starting job 4 for user 561643c8-7193-4958-b3cc-4e5b021c52cd
+[Worker] Step: fetch
+[Worker] Downloading video for question 1
+[Worker] Transcribing question 1
+[Worker] Analyzing with Groq for question 1
+[Worker] Saved analysis for question 1
+[Worker] Downloading video for question 2
+[Worker] Transcribing question 2
+[Worker] Analyzing with Groq for question 2
+[Worker] Saved analysis for question 2
+[Worker] Job 4 completed.
+[Worker] ✓ Job 4 completed
+[Worker] Starting job 3 for user 561643c8-7193-4958-b3cc-4e5b021c52cd
+[Worker] Starting job 2 for user 561643c8-7193-4958-b3cc-4e5b021c52cd
+[Worker] Step: fetch
+[Worker] Step: fetch
+[Worker] Downloading video for question 1
+[Worker] Downloading video for question 1
+[Worker] Transcribing question 1
+[Worker] Transcribing question 1
+[Worker] Analyzing with Groq for question 1
+[Worker] Analyzing with Groq for question 1
+[Worker] Saved analysis for question 1
+[Worker] Downloading video for question 2
+[Worker] Saved analysis for question 1
+[Worker] Downloading video for question 2
+[Worker] Transcribing question 2
+[Worker] Analyzing with Groq for question 2
+[Worker] Transcribing question 2
+[Worker] Analyzing with Groq for question 2
+[Worker] Saved analysis for question 2
+[Worker] Job 2 completed.
+[Worker] ✓ Job 2 completed
+[Worker] Saved analysis for question 2
+[Worker] Job 3 completed.
+[Worker] ✓ Job 3 completed
+[Worker] Starting job 5 for user 758fbbc1-b20d-43f6-b43e-6b8c9900e3a1
+[Worker] Step: fetch
+[Worker] Downloading video for question 1
+[Worker] Transcribing question 1
+[Worker] Analyzing with Groq for question 1
+[Worker] Saved analysis for question 1
+[Worker] Downloading video for question 2
+[Worker] Transcribing question 2
+[Worker] Analyzing with Groq for question 2
+[Worker] Saved analysis for question 2
+[Worker] Job 5 completed.
+[Worker] ✓ Job 5 completed
+[Worker] Starting job 8 for user 20c341b6-790e-419d-9434-66534822b6d9
+[Worker] Step: fetch
+[Worker] Downloading video for question 1
+[Worker] Transcribing question 1
+[Worker] Analyzing with Groq for question 1
+[Worker] Saved analysis for question 1
+[Worker] Job 8 completed.
+[Worker] ✓ Job 8 completed
+[Worker] Starting job 9 for user 20c341b6-790e-419d-9434-66534822b6d9
+[Worker] Step: fetch
+[Worker] Downloading video for question 1
+[Worker] Transcribing question 1
+[Worker] Analyzing with Groq for question 1
+[Worker] Saved analysis for question 1
+[Worker] Job 9 completed.
+[Worker] ✓ Job 9 completed

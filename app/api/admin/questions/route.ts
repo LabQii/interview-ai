@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
     try {
         const data = await req.json();
-        const { id, ...updateData } = data;
+        const { id, createdAt, updatedAt, answers, RedeemCodeQuestions, ...updateData } = data;
 
         if (!id) return NextResponse.json({ error: "ID dibutuhkan" }, { status: 400 });
 

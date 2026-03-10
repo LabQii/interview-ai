@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import { Shield, Activity, Globe, ArrowRight, Lock, Command } from "lucide-react";
 import { redeemCode, saveCandidateName } from "@/server/actions/redeemCode";
 import { motion, AnimatePresence } from "framer-motion";
@@ -56,56 +57,36 @@ export default function LandingPage() {
     <div className="min-h-screen flex flex-col items-center justify-center py-20 px-4">
       {/* Navbar minimal */}
       <nav className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-50">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-violet-600 flex items-center justify-center">
-            <Command className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-bold text-xl tracking-tight">HRD <span className="text-violet-400">Elite</span></span>
-        </div>
-        <div className="hidden md:flex gap-8 text-sm font-medium text-white/70">
-          <a href="#" className="hover:text-white transition-colors">Asesmen</a>
-          <a href="#" className="hover:text-white transition-colors">Solusi</a>
-          <a href="#" className="hover:text-white transition-colors">Enterprise</a>
-          <a href="#" className="hover:text-white transition-colors">Harga</a>
-        </div>
-        <div className="flex gap-4">
-          <button className="text-sm font-medium hover:text-white/80 transition-colors">Masuk</button>
-          <button className="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-            Mulai Sekarang
-          </button>
+        {/* Logo */}
+        <div className="flex items-center gap-3 relative group">
+          <Logo />
         </div>
       </nav>
 
       <main className="max-w-5xl w-full flex flex-col items-center mt-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-8 tracking-wider"
-        >
-          <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-          PENGEMBANGAN SDM GENERASI BARU
-        </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-5xl md:text-7xl font-extrabold text-center tracking-tight mb-6"
+          className="text-3xl md:text-5xl font-extrabold text-center tracking-tight mb-4 mt-4"
         >
-          Optimalkan Talenta Anda <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-400">
-            dengan Presisi AI
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/90 to-white/60">
+            Interview & Test AI Platform
+          </span>{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/80 to-white/50 block mt-2 text-lg md:text-3xl font-medium tracking-normal">
+            by Muhammad Iqbal Firmansyah
           </span>
         </motion.h1>
 
-        <motion.p
+        <motion.h2
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-lg md:text-xl text-center text-white/60 max-w-2xl mb-12"
+          transition={{ delay: 0.3 }}
+          className="text-sm md:text-base text-center text-white/50 max-w-2xl mb-16 font-normal tracking-wide"
         >
-          Platform asesmen revolusioner berbasis sains perilaku dan analitik tingkat lanjut untuk mengidentifikasi pemimpin masa depan.
-        </motion.p>
+          AI Powered Interview and Recruitment System
+        </motion.h2>
 
         {/* Redeem Code Card */}
         <motion.div
@@ -114,7 +95,7 @@ export default function LandingPage() {
           transition={{ delay: 0.3 }}
           className="w-full max-w-2xl card-elevated p-8 mb-24 relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
 
           <AnimatePresence mode="wait">
             {step === 1 ? (
@@ -125,8 +106,8 @@ export default function LandingPage() {
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
               >
-                <h2 className="text-xl font-semibold mb-2">Siap memulai evaluasi?</h2>
-                <p className="text-white/50 text-sm mb-6">Masukkan kode akses Anda.</p>
+                <h2 className="text-xl font-semibold mb-2">Masukkan kode akses anda</h2>
+                <p className="text-white/50 text-sm mb-6">Gunakan tanda (-) dalam kode ex: XXXX-XXXX-XXXX</p>
 
                 <form onSubmit={handleRedeem} className="flex flex-col md:flex-row gap-4">
                   <div className="relative flex-1">
@@ -136,7 +117,7 @@ export default function LandingPage() {
                       value={code}
                       onChange={(e) => setCode(e.target.value.toUpperCase())}
                       placeholder="XXXX-XXXX-XXXX"
-                      className="w-full bg-[#0a0b1e]/50 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-lg font-mono tracking-widest focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-white/20"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-lg font-mono tracking-widest focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all placeholder:text-white/20"
                       required
                     />
                   </div>
@@ -171,7 +152,7 @@ export default function LandingPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Nama Lengkap"
-                      className="w-full bg-[#0a0b1e]/50 border border-white/10 rounded-xl py-4 px-4 text-lg font-medium focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-white/20"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-lg font-medium focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all placeholder:text-white/20"
                       required
                       autoFocus
                     />
@@ -195,14 +176,6 @@ export default function LandingPage() {
             </p>
           )}
 
-          <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-6 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-            <div className="text-xs font-bold tracking-widest">DIPERCAYA OLEH</div>
-            <div className="flex gap-8 font-bold text-xl font-serif">
-              <span>DIPERCAYA</span>
-              <span>OLEH</span>
-              <span>DIPERCAYA</span>
-            </div>
-          </div>
         </motion.div>
 
         {/* Feature Cards */}
@@ -210,19 +183,19 @@ export default function LandingPage() {
           {[
             {
               icon: Shield,
-              title: "Integritas Terverifikasi",
-              desc: "Sistem proctoring canggih untuk menjamin integritas data dalam setiap evaluasi.",
+              title: "Integritas Terjaga",
+              desc: "Sistem pengawasan selama tes membantu memastikan peserta mengerjakan evaluasi secara mandiri dan sesuai aturan.",
             },
             {
               icon: Activity,
-              title: "Analitik Prediktif",
-              desc: "Model AI yang menganalisis indikator perilaku untuk memprediksi potensi kepemimpinan.",
+              title: "Analisis Hasil Tes",
+              desc: "Hasil tes dan jawaban peserta dirangkum untuk membantu tim HR memahami kemampuan dan potensi kandidat.",
             },
             {
               icon: Globe,
-              title: "Kepatuhan Global",
-              desc: "Sesuai dengan standar ISO dan regulasi ketenagakerjaan internasional di berbagai negara.",
-            },
+              title: "Akses Online",
+              desc: "Tes dan sesi interview dapat dilakukan secara online sehingga memudahkan proses seleksi dari berbagai lokasi.",
+            }
           ].map((feature, i) => (
             <motion.div
               key={i}
@@ -231,8 +204,8 @@ export default function LandingPage() {
               transition={{ delay: 0.4 + (i * 0.1) }}
               className="card p-8 hover:bg-white/[0.02] transition-colors group"
             >
-              <div className="w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center mb-6 border border-violet-500/20 group-hover:scale-110 transition-transform">
-                <feature.icon className="w-6 h-6 text-violet-400" />
+              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-6 border border-white/10 group-hover:scale-110 transition-transform">
+                <feature.icon className="w-6 h-6 text-white/80" />
               </div>
               <h3 className="text-lg font-bold mb-3">{feature.title}</h3>
               <p className="text-white/50 text-sm leading-relaxed">{feature.desc}</p>
@@ -244,16 +217,10 @@ export default function LandingPage() {
 
       <footer className="w-full max-w-7xl flex flex-col md:flex-row justify-between items-center py-8 border-t border-white/10 mt-auto text-xs text-white/40">
         <div className="flex items-center gap-2 mb-4 md:mb-0">
-          <Command className="w-4 h-4" />
-          <span className="font-bold text-white/80">HRD Elite</span>
-        </div>
-        <div className="flex gap-6">
-          <a href="#" className="hover:text-white transition-colors">KEAMANAN</a>
-          <a href="#" className="hover:text-white transition-colors">PRIVASI</a>
-          <a href="#" className="hover:text-white transition-colors">KONTAK</a>
+          <Logo textClassName="font-bold text-white/80" className="w-4 h-4" />
         </div>
         <div className="mt-4 md:mt-0">
-          © 2024 HRD Elite Systems. Seluruh hak cipta dilindungi.
+          © 2024 Labqii Tech. Seluruh hak cipta dilindungi.
         </div>
       </footer>
     </div>

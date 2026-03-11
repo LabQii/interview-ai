@@ -1,12 +1,7 @@
 import { Queue } from "bullmq";
 
-import * as dotenv from "dotenv";
-
-dotenv.config();
-if (!process.env.REDIS_URL) {
-    dotenv.config({ path: ".env.railway" });
-}
-
+// No dotenv needed for Vercel/Next.js; it handles env vars automatically.
+// The .env.railway fallback is only for the standalone worker, not the Next.js API.
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 // Parse URL components for BullMQ (uses its own bundled ioredis)

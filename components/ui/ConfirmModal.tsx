@@ -35,24 +35,21 @@ export default function ConfirmModal() {
                     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 pointer-events-none">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
-                            className="w-full max-w-md bg-card border border-white/10 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto relative"
+                            className="w-full max-w-md bg-zinc-900 border border-white/20 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto relative"
                         >
                             {/* Decorative Gradient Background */}
                             <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
 
-                            <div className="p-6">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                                        <AlertTriangle className="w-6 h-6 text-amber-400" />
+                            <div className="p-6 relative z-10">
+                                <div className="flex flex-col items-center text-center gap-4">
+                                    <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.15)] mb-2">
+                                        <AlertTriangle className="w-8 h-8 text-amber-500" />
                                     </div>
-                                    <div className="flex-1 pt-1">
-                                        <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
+                                    <div className="flex-1">
+                                        <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">
                                             {title}
                                         </h3>
-                                        <p className="text-sm text-white/60 leading-relaxed">
+                                        <p className="text-base text-white/80 leading-relaxed max-w-sm mx-auto">
                                             {message}
                                         </p>
                                     </div>

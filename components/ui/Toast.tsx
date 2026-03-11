@@ -9,27 +9,27 @@ const getToastConfig = (type: string) => {
         case "success":
             return {
                 icon: <CheckCircle className="w-5 h-5 text-emerald-400" />,
-                bg: "bg-emerald-500/10",
-                border: "border-emerald-500/20",
+                bg: "bg-emerald-950/90",
+                border: "border-emerald-500/30",
             };
         case "error":
             return {
                 icon: <AlertCircle className="w-5 h-5 text-red-400" />,
-                bg: "bg-red-500/10",
-                border: "border-red-500/20",
+                bg: "bg-red-950/90",
+                border: "border-red-500/30",
             };
         case "warning":
             return {
                 icon: <AlertTriangle className="w-5 h-5 text-amber-400" />,
-                bg: "bg-amber-500/10",
-                border: "border-amber-500/20",
+                bg: "bg-amber-950/90",
+                border: "border-amber-500/30",
             };
         case "info":
         default:
             return {
                 icon: <Info className="w-5 h-5 text-white/80" />,
-                bg: "bg-white/20/10",
-                border: "border-white/20/20",
+                bg: "bg-zinc-900/90",
+                border: "border-white/20",
             };
     }
 };

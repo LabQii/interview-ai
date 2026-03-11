@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Muhammad Iqbal Firmansyah | Interview AI Platform untuk Tes dan Wawancara Online",
+  title: "Interview with AI",
   description: "Platform Interview AI untuk pelaksanaan tes dan wawancara kandidat secara online yang dikembangkan oleh Muhammad Iqbal Firmansyah. Sistem ini membantu proses seleksi kandidat menjadi lebih cepat, objektif, dan terstruktur menggunakan teknologi kecerdasan buatan.",
   keywords: [
     "Muhammad Iqbal Firmansyah",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     "AI Talent Screening"
   ],
   openGraph: {
-    title: "Interview AI Platform - Muhammad Iqbal Firmansyah",
+    title: "Interview with AI - Muhammad Iqbal Firmansyah",
     description: "Platform Interview AI untuk tes dan wawancara kandidat secara online yang membantu proses rekrutmen menjadi lebih cepat dan objektif menggunakan teknologi AI.",
     type: "website",
   }

@@ -2,7 +2,8 @@ import { Queue } from "bullmq";
 import * as dotenv from "dotenv";
 dotenv.config({ path: ".env.railway" });
 
-function parseRedisUrl(url: string) {
+function parseRedisUrl(url: string | undefined) {
+    if (!url) throw new Error("REDIS_URL is strictly required");
     const parsed = new URL(url);
     const isUpstash = parsed.hostname.includes("upstash.io");
     return {
@@ -15,7 +16,7 @@ function parseRedisUrl(url: string) {
     };
 }
 
-const connection = parseRedisUrl(process.env.REDIS_URL || "");
+const connection = parseRedisUrl(process.env.REDIS_URL);
 console.log("Connecting to:", connection.host);
 
 const q = new Queue("interview-analysis", { connection });

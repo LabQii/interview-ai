@@ -22,12 +22,15 @@ const execAsync = promisify(exec);
 const prisma = new PrismaClient();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-function parseRedisUrl(url: string) {
+function parseRedisUrl(url: string | undefined) {
+    if (!url) {
+        throw new Error("REDIS_URL is not set. Ensure .env.railway is loaded correctly.");
+    }
     try {
         const parsed = new URL(url);
         const isUpstash = parsed.hostname.includes("upstash.io");
         return {
-            host: parsed.hostname || "127.0.0.1",
+            host: parsed.hostname,
             port: parseInt(parsed.port || "6379"),
             password: parsed.password || undefined,
             username: parsed.username || undefined,
@@ -35,10 +38,12 @@ function parseRedisUrl(url: string) {
             family: isUpstash ? 0 : undefined, // Force IPv4/IPv6 resolution for Upstash
             maxRetriesPerRequest: null, // Required by BullMQ for Upstash
         };
-    } catch { return { host: "127.0.0.1", port: 6379, maxRetriesPerRequest: null }; }
+    } catch (err: any) { 
+        throw new Error(`REDIS_URL invalid: ${err.message}`); 
+    }
 }
 
-const connection = parseRedisUrl(process.env.REDIS_URL || "redis://localhost:6379");
+const connection = parseRedisUrl(process.env.REDIS_URL);
 
 const STEP_IDS = ["fetch", "audio", "stt", "ai", "save"] as const;
 type StepId = typeof STEP_IDS[number];

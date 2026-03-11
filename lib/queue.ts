@@ -2,15 +2,19 @@ import { Queue } from "bullmq";
 
 // No dotenv needed for Vercel/Next.js; it handles env vars automatically.
 // The .env.railway fallback is only for the standalone worker, not the Next.js API.
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const REDIS_URL = process.env.REDIS_URL;
 
 // Parse URL components for BullMQ (uses its own bundled ioredis)
-function parseRedisUrl(url: string) {
+function parseRedisUrl(url: string | undefined) {
+    if (!url) {
+        throw new Error("REDIS_URL environment variable is missing. Please add it in Vercel Dashboard.");
+    }
+    
     try {
         const parsed = new URL(url);
         const isUpstash = parsed.hostname.includes("upstash.io");
         return {
-            host: parsed.hostname || "127.0.0.1",
+            host: parsed.hostname,
             port: parseInt(parsed.port || "6379"),
             password: parsed.password || undefined,
             username: parsed.username || undefined,
@@ -18,8 +22,8 @@ function parseRedisUrl(url: string) {
             family: isUpstash ? 0 : undefined,
             maxRetriesPerRequest: null,
         };
-    } catch {
-        return { host: "127.0.0.1", port: 6379, maxRetriesPerRequest: null };
+    } catch (err: any) {
+        throw new Error(`REDIS_URL is invalid: ${err.message}. Value provided: ${url}`);
     }
 }
 

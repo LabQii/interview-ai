@@ -99,18 +99,18 @@ async function downloadVideo(videoUrl: string, destPath: string) {
     await writeFile(destPath, buffer);
 }
 
-// Absolute paths for Homebrew-installed binaries (macOS)
-// These are needed because Node.js child_process doesn't inherit shell PATH
-const FFMPEG_PATH = "/opt/homebrew/bin/ffmpeg";
+// Use ffmpeg from system PATH. When running locally on macOS, the custom EXEC_ENV ensures
+// homebrew paths are checked. On Railway/Linux, it will just use the standard PATH.
+const FFMPEG_PATH = "ffmpeg";
 
-// Env that ensures Homebrew is in PATH for ffmpeg
+// Env that ensures Homebrew is in PATH for ffmpeg when running locally on macOS
 const EXEC_ENV = {
     ...process.env,
     PATH: `/opt/homebrew/bin:/usr/local/bin:${process.env.PATH}`,
 };
 
 async function extractAudio(videoPath: string, audioPath: string) {
-    await execAsync(`"${FFMPEG_PATH}" -y -i "${videoPath}" -ar 16000 -ac 1 "${audioPath}"`, { env: EXEC_ENV });
+    await execAsync(`${FFMPEG_PATH} -y -i "${videoPath}" -ar 16000 -ac 1 "${audioPath}"`, { env: EXEC_ENV });
 }
 
 async function transcribeAudio(audioPath: string): Promise<string> {

@@ -198,27 +198,40 @@ const worker = new Worker(
                 if (i === questions.length - 1) {
                     await setStep(job, "ai", "done");
 
-                    // Calculate final average score
+                    // Calculate final score from all 4 components across all questions
+                    // Formula: avg(communicationScore, relevanceScore, confidenceScore, overallScore) × 10 → scale 1–100
                     const allAnalyses = await prisma.interviewAnalysis.findMany({
                         where: { userId },
-                        select: { overallScore: true },
+                        select: {
+                            communicationScore: true,
+                            relevanceScore: true,
+                            confidenceScore: true,
+                            overallScore: true,
+                        },
                     });
 
-                    const validScores = allAnalyses
-                        .map((a) => a.overallScore)
-                        .filter((s) => s !== null && s !== undefined) as number[];
+                    const componentAvgs = allAnalyses.map((a) => {
+                        const scores = [
+                            a.communicationScore,
+                            a.relevanceScore,
+                            a.confidenceScore,
+                            a.overallScore,
+                        ].filter((s) => s !== null && s !== undefined) as number[];
+                        return scores.length > 0
+                            ? scores.reduce((sum, s) => sum + s, 0) / scores.length
+                            : null;
+                    }).filter((v) => v !== null) as number[];
 
-                    if (validScores.length > 0) {
-                        const sum = validScores.reduce((acc, curr) => acc + curr, 0);
-                        const avgRaw = sum / validScores.length;
-                        // Round heavily to 1 decimal point
-                        const finalScore = Math.round(avgRaw * 10) / 10;
+                    if (componentAvgs.length > 0) {
+                        const overallAvg = componentAvgs.reduce((sum, v) => sum + v, 0) / componentAvgs.length;
+                        // Multiply by 10 to convert 1–10 → 1–100, round to 1 decimal
+                        const finalScore = Math.round(overallAvg * 10 * 10) / 10;
 
                         await prisma.interview.update({
                             where: { userId },
                             data: { aiScore: finalScore },
                         });
-                        console.log(`[Worker] Calculated final AI score for user ${userId}: ${finalScore}`);
+                        console.log(`[Worker] Final AI score for ${userId}: ${finalScore}/100`);
                     }
 
                     await setStep(job, "save", "done");

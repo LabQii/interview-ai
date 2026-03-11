@@ -39,6 +39,20 @@ export default function ParticipantDetail() {
     // Calculate AI analyses completion
     const analysedCount = analyses?.length ?? 0;
 
+    // Compute AI Score in 1–100 scale from the 4 components
+    // Formula: avg(communication, relevance, confidence, overall) × 10
+    const aiScore100 = (() => {
+        if (!analyses || analyses.length === 0) return null;
+        const perQuestion = analyses.map((a: any) => {
+            const scores = [a.communicationScore, a.relevanceScore, a.confidenceScore, a.overallScore]
+                .filter((s: any) => s !== null && s !== undefined) as number[];
+            return scores.length > 0 ? scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length : null;
+        }).filter((v: any) => v !== null) as number[];
+        if (perQuestion.length === 0) return null;
+        const avg = perQuestion.reduce((sum, v) => sum + v, 0) / perQuestion.length;
+        return Math.round(avg * 10 * 10) / 10; // ×10 to get 1–100
+    })();
+
     return (
         <div className="p-6 md:p-10 max-w-5xl mx-auto pb-24">
             <button
@@ -94,7 +108,7 @@ export default function ParticipantDetail() {
                                             <span className="text-white/40">Belum Mulai</span>
                                         )}
                                     </div>
-                                    <div className="text-sm text-white/50">
+                                    <div className="text-sm text-white/50 mt-3">
                                         <span className="text-emerald-400 font-bold">{correctCount} Benar</span> / {totalAnswered} Dijawab
                                     </div>
                                 </div>
@@ -136,7 +150,14 @@ export default function ParticipantDetail() {
                         <>
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex flex-col">
-                                    <span className="text-5xl font-bold mb-2">{interview.aiScore ? interview.aiScore.toFixed(1) : '-'}</span>
+                                    <div className="flex items-baseline gap-1 mb-2">
+                                        <span className="text-5xl font-bold">
+                                            {aiScore100 !== null ? aiScore100.toFixed(1) : (interview.aiScore ? interview.aiScore.toFixed(1) : '-')}
+                                        </span>
+                                        {(aiScore100 !== null || interview.aiScore) && (
+                                            <span className="text-white/30 text-lg font-bold">/100</span>
+                                        )}
+                                    </div>
                                     <span className="text-xs text-white/40 uppercase font-bold tracking-widest">AI Score</span>
                                 </div>
                                 <div className="text-right">
@@ -149,7 +170,7 @@ export default function ParticipantDetail() {
                                             <span className="text-white/40">Belum Dinilai</span>
                                         )}
                                     </div>
-                                    <div className="text-sm text-white/50">
+                                    <div className="text-sm text-white/50 mt-3">
                                         <span className="text-emerald-400 font-bold">{analysedCount} Soal</span> / {totalInterviewQuestions ?? analysedCount} Dianalisis
                                     </div>
                                 </div>

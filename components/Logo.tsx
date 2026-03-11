@@ -4,9 +4,9 @@ export function Logo({ className = "w-8 h-8", textClassName = "text-xl font-bold
     return (
         <div className="flex items-center gap-2">
             <img 
-                src="/icon.png" 
+                src="/logo-ai.png" 
                 alt="Logo" 
-                className={`${className} rounded-lg object-contain shadow-sm`}
+                className={`${className} rounded-lg object-contain shadow-sm border border-white/5 bg-white/5`}
             />
             <span className={`tracking-tight ${textClassName}`}>Labqii Tech</span>
         </div>

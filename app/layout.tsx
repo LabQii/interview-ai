@@ -25,6 +25,11 @@ export const metadata: Metadata = {
     title: "Interview with AI - Muhammad Iqbal Firmansyah",
     description: "Platform Interview AI untuk tes dan wawancara kandidat secara online yang membantu proses rekrutmen menjadi lebih cepat dan objektif menggunakan teknologi AI.",
     type: "website",
+  },
+  icons: {
+    icon: "/logo-ai.png?v=1",
+    shortcut: "/logo-ai.png?v=1",
+    apple: "/logo-ai.png?v=1",
   }
 };
 // .

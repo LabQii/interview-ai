@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/server/actions/redeemCode";
 import { InterviewView } from "@/components/interview/InterviewView";
-import { Command } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import prisma from "@/lib/prisma";
 
@@ -41,7 +40,11 @@ export default async function InterviewPage() {
             </header>
 
             <main className="flex-1 flex flex-col items-center justify-center p-4 pt-24 pb-20 w-full">
-                <InterviewView questions={questions} />
+                <InterviewView
+                    questions={questions}
+                    interviewId={sessionData.interview.id}
+                    totalQuestions={questions.length}
+                />
             </main>
         </div>
     );

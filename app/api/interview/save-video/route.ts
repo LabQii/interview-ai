@@ -5,7 +5,7 @@ import { analysisQueue } from "@/lib/queue";
 
 export const dynamic = "force-dynamic";
 
-// Called after direct browser upload to Cloudinary — just saves the URL to DB and queues analysis
+// Called after direct browser upload to Cloudinary — saves URL to DB and queues analysis
 export async function POST(req: NextRequest) {
     const cookieStore = await cookies();
     const userId = cookieStore.get("userId")?.value;
@@ -33,8 +33,21 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Interview sudah disubmit" }, { status: 400 });
         }
 
+        // ── Duplicate submission guard (Fix #5) ───────────────────────────────
+        // If an analysis record already exists for this question, prevent duplicate job
+        if (questionId) {
+            const existing = await prisma.interviewAnalysis.findFirst({
+                where: { userId, questionId },
+            });
+            if (existing) {
+                return NextResponse.json(
+                    { error: "Pertanyaan ini sudah dijawab sebelumnya", alreadySubmitted: true },
+                    { status: 409 }
+                );
+            }
+        }
+
         const newVideoUrls = [...interview.videoUrls, videoUrl];
-        // Only finalize the entire interview when client explicitly sends isFinal=true
         const shouldFinalize = isFinal === true;
 
         const updated = await prisma.interview.update({

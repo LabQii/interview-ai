@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VideoRecorder } from "@/components/interview/VideoRecorder";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -13,25 +13,49 @@ interface InterviewQuestion {
 
 interface InterviewViewProps {
     questions: InterviewQuestion[];
+    interviewId: string;
+    totalQuestions: number;
 }
 
+export function InterviewView({ questions, interviewId, totalQuestions }: InterviewViewProps) {
+    const totalQ = totalQuestions || questions.length;
 
+    // ── Restore persisted question index ─────────────────────────────────────
+    const indexKey = `interview_index_${interviewId}`;
 
-export function InterviewView({ questions }: InterviewViewProps) {
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const currentQuestion = questions[currentIndex];
-    const totalQuestions = questions.length;
-    const isLastQuestion = currentIndex === totalQuestions - 1;
+    // Start with -1 to indicate "not yet hydrated" to prevent flash of Q1 before localStorage is read
+    const [currentIndex, setCurrentIndex] = useState<number>(-1);
+
+    useEffect(() => {
+        const saved = parseInt(localStorage.getItem(indexKey) || "0", 10);
+        const validIndex = Math.min(Math.max(0, saved), questions.length - 1);
+        setCurrentIndex(validIndex);
+    }, [interviewId]);
+
+    const currentQuestion = currentIndex >= 0 ? questions[currentIndex] : null;
+    const isLastQuestion = currentIndex === totalQ - 1;
 
     const handleQuestionComplete = () => {
         if (isLastQuestion) {
+            // Persist "all done" state then navigate
+            localStorage.setItem(indexKey, String(totalQ));
             window.location.href = "/result";
         } else {
-            setCurrentIndex((i) => i + 1);
+            const next = currentIndex + 1;
+            localStorage.setItem(indexKey, String(next));
+            setCurrentIndex(next);
         }
     };
 
-    // ── Question Screen ────────────────────────────────────────────────────────
+    // Loading state while restoring index
+    if (currentIndex < 0 || !currentQuestion) {
+        return (
+            <div className="w-full max-w-4xl mx-auto flex items-center justify-center h-60">
+                <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+            </div>
+        );
+    }
+
     return (
         <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
             {/* Question progress */}
@@ -40,12 +64,12 @@ export function InterviewView({ questions }: InterviewViewProps) {
                     <motion.div
                         className="h-full bg-gradient-to-r from-white/20 to-white/5 rounded-full"
                         initial={{ width: 0 }}
-                        animate={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
+                        animate={{ width: `${((currentIndex + 1) / totalQ) * 100}%` }}
                         transition={{ duration: 0.4 }}
                     />
                 </div>
                 <span className="text-xs font-bold text-white/40 shrink-0 tabular-nums">
-                    {currentIndex + 1} / {totalQuestions}
+                    {currentIndex + 1} / {totalQ}
                 </span>
             </div>
 
@@ -61,7 +85,7 @@ export function InterviewView({ questions }: InterviewViewProps) {
                 >
                     {/* Decorative subtle top light */}
                     <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
-                    
+
                     {currentQuestion.category && (
                         <span className="inline-block relative z-10 text-xs font-bold tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full mb-5">
                             {currentQuestion.category}
@@ -73,9 +97,10 @@ export function InterviewView({ questions }: InterviewViewProps) {
                 </motion.div>
             </AnimatePresence>
 
-            {/* VideoRecorder (key forces re-mount per question so state resets) */}
+            {/* VideoRecorder (key forces re-mount per question so recording state resets) */}
             <VideoRecorder
                 key={currentQuestion.id}
+                interviewId={interviewId}
                 questionId={currentQuestion.id}
                 questionIndex={currentIndex}
                 isLastQuestion={isLastQuestion}

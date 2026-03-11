@@ -18,7 +18,9 @@ const AI_STEPS_CONFIG = [
 ];
 
 interface VideoRecorderProps {
-    /** ID of the interview question being answered (for per-question save) */
+    /** Session-level interview ID */
+    interviewId: string;
+    /** ID of the interview question being answered */
     questionId?: string;
     /** 0-based index of this question in the interview session */
     questionIndex?: number;
@@ -29,12 +31,18 @@ interface VideoRecorderProps {
 }
 
 export function VideoRecorder({
+    interviewId,
     questionId,
     questionIndex = 0,
     isLastQuestion = false,
     onComplete,
 }: VideoRecorderProps) {
     const showToast = useUIStore((state) => state.showToast);
+
+    // Compound key prevents cross-question/session state mixing
+    const storageKey = interviewId && questionId ? `${interviewId}_${questionId}` : questionId ?? "";
+    const submittedKey = `submitted_${storageKey}`;
+    const retakeKey = `retake_${storageKey}`;
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -52,20 +60,34 @@ export function VideoRecorder({
 
     const [uploading, setUploading] = useState(false);
     const [aiProgressPerc, setAiProgressPerc] = useState(0);
-
     const [uploadJobId, setUploadJobId] = useState<string | null>(null);
     const [jobStatuses, setJobStatuses] = useState<Record<string, string>>({});
     const [analysisDone, setAnalysisDone] = useState(false);
     const [isRestoringData, setIsRestoringData] = useState(true);
+    // Track if this question is already submitted (prevents duplicate)
+    const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false);
 
     const canRetake = retakeCount < MAX_RETAKE;
 
-    // Restore from IndexedDB on initial load
+    // ── Restore from localStorage and IndexedDB on mount ────────────────────
     useEffect(() => {
-        if (!questionId) return;
+        if (!storageKey) { setIsRestoringData(false); return; }
         let isMounted = true;
 
-        getVideoDB(questionId).then((blob) => {
+        // Restore retake count
+        const savedRetake = parseInt(localStorage.getItem(retakeKey) || "0", 10);
+        if (isMounted) setRetakeCount(savedRetake);
+
+        // Check if already submitted
+        const submitted = localStorage.getItem(submittedKey) === "true";
+        if (isMounted && submitted) {
+            setIsAlreadySubmitted(true);
+            setIsRestoringData(false);
+            return;
+        }
+
+        // Restore unsubmitted video from IndexedDB
+        getVideoDB(storageKey).then((blob) => {
             if (isMounted && blob) {
                 const url = URL.createObjectURL(blob);
                 setRecordedBlob(blob);
@@ -76,9 +98,9 @@ export function VideoRecorder({
         });
 
         return () => { isMounted = false; };
-    }, [questionId]);
+    }, [storageKey]);
 
-    // Polling effect for job status
+    // ── Polling for AI job status (non-final questions) ─────────────────────
     useEffect(() => {
         if (!uploadJobId || analysisDone) return;
 
@@ -95,16 +117,12 @@ export function VideoRecorder({
                 for (let i = 0; i < AI_STEPS_CONFIG.length; i++) {
                     const stepId = AI_STEPS_CONFIG[i].id;
                     const status = newStatuses[stepId];
-                    if (status === "done" || status === "running") {
-                        currentStepIndex = i;
-                    }
+                    if (status === "done" || status === "running") currentStepIndex = i;
                 }
 
                 const step = AI_STEPS_CONFIG[currentStepIndex];
                 let perc = step.prog;
-                if (newStatuses[step.id] === "running") {
-                    perc = step.prog - Math.floor(step.prog * 0.1);
-                }
+                if (newStatuses[step.id] === "running") perc = step.prog - Math.floor(step.prog * 0.1);
                 setAiProgressPerc(perc);
 
                 if (data.state === "completed" || data.state === "failed") {
@@ -158,6 +176,8 @@ export function VideoRecorder({
 
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
+                // Fix #6: Ensure NO CSS mirroring on the live preview element
+                videoRef.current.style.transform = "none";
             }
 
             const preferredTypes = [
@@ -183,8 +203,8 @@ export function VideoRecorder({
                 stream.getTracks().forEach(t => t.stop());
                 streamRef.current = null;
 
-                // Persist video securely for refresh-safety
-                if (questionId) saveVideoDB(questionId, blob).catch(console.error);
+                // Persist video securely using compound key
+                if (storageKey) saveVideoDB(storageKey, blob).catch(console.error);
             };
 
             recorder.start(500);
@@ -193,10 +213,7 @@ export function VideoRecorder({
 
             timerRef.current = setInterval(() => {
                 setRecordingSeconds(s => {
-                    if (s + 1 >= MAX_SECONDS) {
-                        stopStream();
-                        return MAX_SECONDS;
-                    }
+                    if (s + 1 >= MAX_SECONDS) { stopStream(); return MAX_SECONDS; }
                     return s + 1;
                 });
             }, 1000);
@@ -206,7 +223,7 @@ export function VideoRecorder({
             setError("Gagal mengakses kamera/mikrofon. Pastikan izin telah diberikan.");
             console.error(err);
         }
-    }, [stopStream]);
+    }, [stopStream, storageKey]);
 
     const handleStop = useCallback(() => {
         stopStream();
@@ -219,12 +236,16 @@ export function VideoRecorder({
         setPreviewUrl(null);
         setRecordedBlob(null);
         chunksRef.current = [];
-        setRetakeCount(c => c + 1);
-        if (questionId) await deleteVideoDB(questionId).catch(console.error);
-    }, [canRetake, previewUrl, stopStream, questionId]);
+        const newCount = retakeCount + 1;
+        setRetakeCount(newCount);
+        // Persist retake count
+        if (retakeKey) localStorage.setItem(retakeKey, String(newCount));
+        // Clear the stored video for this question
+        if (storageKey) await deleteVideoDB(storageKey).catch(console.error);
+    }, [canRetake, previewUrl, stopStream, retakeCount, retakeKey, storageKey]);
 
     const handleSubmit = useCallback(async () => {
-        if (!previewUrl || !recordedBlob || uploading) return;
+        if (!previewUrl || !recordedBlob || uploading || isAlreadySubmitted) return;
         setUploading(true);
         setAnalysisDone(false);
         setJobStatuses({ upload: "running" });
@@ -275,21 +296,40 @@ export function VideoRecorder({
 
             if (!saveRes.ok) {
                 const data = await saveRes.json();
+                // 409 = already submitted, treat as success
+                if (saveRes.status === 409) {
+                    localStorage.setItem(submittedKey, "true");
+                    if (storageKey) await deleteVideoDB(storageKey).catch(console.error);
+                    setIsAlreadySubmitted(true);
+                    setUploading(false);
+                    if (onComplete) onComplete();
+                    return;
+                }
                 throw new Error(data.error ?? "Gagal menyimpan data");
             }
 
             const data = await saveRes.json();
 
+            // Mark this question as submitted to prevent duplicate
+            localStorage.setItem(submittedKey, "true");
             // Clean up stored video now that it's successfully sent
-            if (questionId) await deleteVideoDB(questionId).catch(console.error);
+            if (storageKey) await deleteVideoDB(storageKey).catch(console.error);
 
-            // Step 4: If it's the last question, skip polling and complete immediately
+            // Step 4: If it's the last question, navigate directly to result
             if (isLastQuestion) {
+                // Store jobId for the result page to poll
+                const existingJobs = JSON.parse(localStorage.getItem(`jobs_${interviewId}`) || "[]");
+                existingJobs.push(data.jobId);
+                localStorage.setItem(`jobs_${interviewId}`, JSON.stringify(existingJobs));
                 setUploading(false);
-                setAnalysisDone(true);
                 if (onComplete) onComplete();
                 return;
             }
+
+            // Store jobId for non-final questions too (optional, for result page)
+            const existingJobs = JSON.parse(localStorage.getItem(`jobs_${interviewId}`) || "[]");
+            existingJobs.push(data.jobId);
+            localStorage.setItem(`jobs_${interviewId}`, JSON.stringify(existingJobs));
 
             // Step 5: Start polling for non-final questions
             setUploadJobId(data.jobId);
@@ -301,7 +341,7 @@ export function VideoRecorder({
             setAiProgressPerc(0);
             setJobStatuses({});
         }
-    }, [previewUrl, recordedBlob, uploading, isLastQuestion, questionId, questionIndex, showToast]);
+    }, [previewUrl, recordedBlob, uploading, isAlreadySubmitted, isLastQuestion, questionId, questionIndex, storageKey, submittedKey, interviewId, showToast, onComplete]);
 
     const progressPct = `${(recordingSeconds / MAX_SECONDS) * 100}%`;
 
@@ -314,9 +354,19 @@ export function VideoRecorder({
         );
     }
 
+    // Already submitted guard
+    if (isAlreadySubmitted) {
+        return (
+            <div className="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-8 flex flex-col items-center gap-3">
+                <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+                <p className="text-emerald-400 font-bold text-lg">Jawaban berhasil dikirim</p>
+                <p className="text-white/40 text-sm">Pertanyaan ini sudah dijawab dan tidak dapat dikerjakan ulang.</p>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full flex flex-col gap-6">
-
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
@@ -343,7 +393,7 @@ export function VideoRecorder({
                 </div>
             )}
 
-            {/* Video Player */}
+            {/* Video Player — NO mirroring (fix #6) */}
             <div className="relative aspect-video w-full bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
                 {previewUrl ? (
                     <video
@@ -353,6 +403,7 @@ export function VideoRecorder({
                         autoPlay
                         playsInline
                         className="w-full h-full object-cover"
+                        style={{ transform: "none" }}
                     />
                 ) : (
                     <video
@@ -360,6 +411,7 @@ export function VideoRecorder({
                         autoPlay
                         playsInline
                         muted
+                        style={{ transform: "none" }}
                         className={`w-full h-full object-cover transition-opacity duration-300 ${isRecording ? "opacity-100" : "opacity-40"}`}
                     />
                 )}
@@ -401,7 +453,7 @@ export function VideoRecorder({
 
             {/* Action area */}
             <div className="flex flex-col gap-4">
-                {/* AI Progress UI */}
+                {/* AI Progress UI (for non-final questions) */}
                 {uploading && (
                     <div className="w-full bg-background border border-emerald-500/30 rounded-2xl p-6 shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col gap-4">
                         <div className="flex items-center justify-between text-sm font-bold border-b border-white/5 pb-4 mb-2">
@@ -412,23 +464,15 @@ export function VideoRecorder({
                             <span className="text-emerald-400 font-mono text-lg">{aiProgressPerc}%</span>
                         </div>
 
-                        {/* List of progress steps */}
                         <div className="flex flex-col gap-3">
                             {AI_STEPS_CONFIG.map((step) => {
                                 const status = jobStatuses[step.id] || "pending";
                                 const isDone = status === "done";
                                 const isRunning = status === "running";
-
                                 return (
-                                    <div key={step.id} className={`flex items-center justify-between text-sm font-medium transition-all duration-300 ${isDone ? "text-white" : isRunning ? "text-emerald-400" : "text-white/30"}`}>
+                                    <div key={step.id} className={`flex items-center text-sm font-medium transition-all duration-300 ${isDone ? "text-white" : isRunning ? "text-emerald-400" : "text-white/30"}`}>
                                         <div className="flex items-center gap-3">
-                                            {isDone ? (
-                                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                                            ) : isRunning ? (
-                                                <div className="w-4 h-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
-                                            ) : (
-                                                <div className="w-4 h-4 rounded-full border border-white/20" />
-                                            )}
+                                            {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : isRunning ? <div className="w-4 h-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
                                             <span>{step.label}</span>
                                         </div>
                                     </div>
@@ -437,10 +481,7 @@ export function VideoRecorder({
                         </div>
 
                         <div className="mt-4 h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700 ease-out"
-                                style={{ width: `${aiProgressPerc}%` }}
-                            />
+                            <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700 ease-out" style={{ width: `${aiProgressPerc}%` }} />
                         </div>
 
                         {!analysisDone ? (
@@ -464,10 +505,7 @@ export function VideoRecorder({
 
                 {/* Stop recording button */}
                 {isRecording && (
-                    <button
-                        onClick={handleStop}
-                        className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-xl font-bold w-full justify-center transition-colors"
-                    >
+                    <button onClick={handleStop} className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-xl font-bold w-full justify-center transition-colors">
                         <Square className="w-5 h-5" fill="currentColor" /> Akhiri Rekaman
                     </button>
                 )}
@@ -488,11 +526,7 @@ export function VideoRecorder({
                             disabled={uploading}
                             className="flex-1 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-xl py-3 flex justify-center items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25"
                         >
-                            {isLastQuestion ? (
-                                <>Simpan & Selesai <CheckCircle2 className="w-5 h-5" /></>
-                            ) : (
-                                <>Simpan & Lanjut <ChevronRight className="w-5 h-5" /></>
-                            )}
+                            {isLastQuestion ? (<>Simpan & Selesai <CheckCircle2 className="w-5 h-5" /></>) : (<>Simpan & Lanjut <ChevronRight className="w-5 h-5" /></>)}
                         </button>
                     </div>
                 )}

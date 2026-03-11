@@ -17,13 +17,6 @@ import path from "path";
 import os from "os";
 import { PrismaClient } from "@prisma/client";
 import Groq from "groq-sdk";
-import * as dotenv from "dotenv";
-
-dotenv.config();
-if (!process.env.REDIS_URL) {
-    // Fallback if deploying on Railway and not using explicit Railway variables
-    dotenv.config({ path: ".env.railway" });
-}
 
 const execAsync = promisify(exec);
 const prisma = new PrismaClient();

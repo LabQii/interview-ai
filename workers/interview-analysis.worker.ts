@@ -17,7 +17,7 @@ import path from "path";
 import os from "os";
 import { PrismaClient } from "@prisma/client";
 import Groq from "groq-sdk";
-
+import ffmpegStatic from "ffmpeg-static";
 const execAsync = promisify(exec);
 const prisma = new PrismaClient();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -99,18 +99,11 @@ async function downloadVideo(videoUrl: string, destPath: string) {
     await writeFile(destPath, buffer);
 }
 
-// Use ffmpeg from system PATH. When running locally on macOS, the custom EXEC_ENV ensures
-// homebrew paths are checked. On Railway/Linux, it will just use the standard PATH.
-const FFMPEG_PATH = "ffmpeg";
-
-// Env that ensures Homebrew is in PATH for ffmpeg when running locally on macOS
-const EXEC_ENV = {
-    ...process.env,
-    PATH: `/opt/homebrew/bin:/usr/local/bin:${process.env.PATH}`,
-};
+// Use ffmpeg-static which bundles the binary. Works everywhere w/o apt-get/nixpacks
+const FFMPEG_PATH = ffmpegStatic!;
 
 async function extractAudio(videoPath: string, audioPath: string) {
-    await execAsync(`${FFMPEG_PATH} -y -i "${videoPath}" -ar 16000 -ac 1 "${audioPath}"`, { env: EXEC_ENV });
+    await execAsync(`"${FFMPEG_PATH}" -y -i "${videoPath}" -ar 16000 -ac 1 "${audioPath}"`);
 }
 
 async function transcribeAudio(audioPath: string): Promise<string> {

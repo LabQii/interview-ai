@@ -4,6 +4,8 @@ import { submitTest } from "@/server/actions/testSession";
 import { isTestExpired } from "@/lib/timer";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 // Called by timer expiry or tab violations
 export async function POST() {
     const cookieStore = await cookies();

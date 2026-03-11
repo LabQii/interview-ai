@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "worker": "npx @dotenvx/dotenvx run -f .env.railway -- npx tsx workers/interview-analysis.worker.ts"
+    "worker": "npx tsx workers/interview-analysis.worker.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

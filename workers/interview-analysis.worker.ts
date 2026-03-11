@@ -195,10 +195,32 @@ const worker = new Worker(
                         status: "completed",
                     },
                 });
-                console.log(`[Worker] Saved analysis for question ${i + 1}`);
-
                 if (i === questions.length - 1) {
                     await setStep(job, "ai", "done");
+
+                    // Calculate final average score
+                    const allAnalyses = await prisma.interviewAnalysis.findMany({
+                        where: { userId },
+                        select: { overallScore: true },
+                    });
+
+                    const validScores = allAnalyses
+                        .map((a) => a.overallScore)
+                        .filter((s) => s !== null && s !== undefined) as number[];
+
+                    if (validScores.length > 0) {
+                        const sum = validScores.reduce((acc, curr) => acc + curr, 0);
+                        const avgRaw = sum / validScores.length;
+                        // Round heavily to 1 decimal point
+                        const finalScore = Math.round(avgRaw * 10) / 10;
+
+                        await prisma.interview.update({
+                            where: { userId },
+                            data: { aiScore: finalScore },
+                        });
+                        console.log(`[Worker] Calculated final AI score for user ${userId}: ${finalScore}`);
+                    }
+
                     await setStep(job, "save", "done");
                 }
             } catch (err) {

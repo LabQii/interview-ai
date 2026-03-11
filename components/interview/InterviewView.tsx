@@ -57,14 +57,17 @@ export function InterviewView({ questions }: InterviewViewProps) {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="card-elevated p-6 md:p-8"
+                    className="relative p-6 md:p-10 rounded-3xl border border-white/20 bg-gradient-to-br from-white/10 via-white/[0.05] to-transparent shadow-[0_8px_32px_rgba(255,255,255,0.05)] overflow-hidden backdrop-blur-xl"
                 >
+                    {/* Decorative subtle top light */}
+                    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                    
                     {currentQuestion.category && (
-                        <span className="inline-block text-xs font-bold tracking-widest text-white/80 bg-white/5 border border-white/10 px-3 py-1 rounded-full mb-4">
+                        <span className="inline-block relative z-10 text-xs font-bold tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full mb-5">
                             {currentQuestion.category}
                         </span>
                     )}
-                    <h2 className="text-xl md:text-2xl font-bold leading-snug text-white">
+                    <h2 className="relative z-10 text-2xl md:text-3xl lg:text-4xl font-extrabold leading-tight text-white drop-shadow-md">
                         {currentQuestion.question}
                     </h2>
                 </motion.div>

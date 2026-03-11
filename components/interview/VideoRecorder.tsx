@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Video, VideoOff, Square, RefreshCcw, AlertCircle, ChevronRight, CheckCircle2 } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
+import { saveVideoDB, getVideoDB, deleteVideoDB } from "@/lib/indexeddb";
 
 const MAX_RETAKE = 3;
 const MAX_SECONDS = 60;
@@ -55,8 +56,27 @@ export function VideoRecorder({
     const [uploadJobId, setUploadJobId] = useState<string | null>(null);
     const [jobStatuses, setJobStatuses] = useState<Record<string, string>>({});
     const [analysisDone, setAnalysisDone] = useState(false);
+    const [isRestoringData, setIsRestoringData] = useState(true);
 
     const canRetake = retakeCount < MAX_RETAKE;
+
+    // Restore from IndexedDB on initial load
+    useEffect(() => {
+        if (!questionId) return;
+        let isMounted = true;
+
+        getVideoDB(questionId).then((blob) => {
+            if (isMounted && blob) {
+                const url = URL.createObjectURL(blob);
+                setRecordedBlob(blob);
+                setPreviewUrl(url);
+            }
+        }).finally(() => {
+            if (isMounted) setIsRestoringData(false);
+        });
+
+        return () => { isMounted = false; };
+    }, [questionId]);
 
     // Polling effect for job status
     useEffect(() => {
@@ -162,6 +182,9 @@ export function VideoRecorder({
                 setPreviewUrl(url);
                 stream.getTracks().forEach(t => t.stop());
                 streamRef.current = null;
+
+                // Persist video securely for refresh-safety
+                if (questionId) saveVideoDB(questionId, blob).catch(console.error);
             };
 
             recorder.start(500);
@@ -189,7 +212,7 @@ export function VideoRecorder({
         stopStream();
     }, [stopStream]);
 
-    const handleRetake = useCallback(() => {
+    const handleRetake = useCallback(async () => {
         if (!canRetake) return;
         stopStream();
         if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -197,7 +220,8 @@ export function VideoRecorder({
         setRecordedBlob(null);
         chunksRef.current = [];
         setRetakeCount(c => c + 1);
-    }, [canRetake, previewUrl, stopStream]);
+        if (questionId) await deleteVideoDB(questionId).catch(console.error);
+    }, [canRetake, previewUrl, stopStream, questionId]);
 
     const handleSubmit = useCallback(async () => {
         if (!previewUrl || !recordedBlob || uploading) return;
@@ -256,7 +280,18 @@ export function VideoRecorder({
 
             const data = await saveRes.json();
 
-            // Step 4: Start polling
+            // Clean up stored video now that it's successfully sent
+            if (questionId) await deleteVideoDB(questionId).catch(console.error);
+
+            // Step 4: If it's the last question, skip polling and complete immediately
+            if (isLastQuestion) {
+                setUploading(false);
+                setAnalysisDone(true);
+                if (onComplete) onComplete();
+                return;
+            }
+
+            // Step 5: Start polling for non-final questions
             setUploadJobId(data.jobId);
 
         } catch (err) {
@@ -269,6 +304,15 @@ export function VideoRecorder({
     }, [previewUrl, recordedBlob, uploading, isLastQuestion, questionId, questionIndex, showToast]);
 
     const progressPct = `${(recordingSeconds / MAX_SECONDS) * 100}%`;
+
+    if (isRestoringData) {
+        return (
+            <div className="w-full h-80 flex flex-col items-center justify-center bg-black rounded-2xl border border-white/5">
+                <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin mb-4" />
+                <span className="text-white/40 text-sm font-medium">Memulihkan rekaman sebelumnya...</span>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full flex flex-col gap-6">

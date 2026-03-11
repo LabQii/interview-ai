@@ -16,51 +16,56 @@ export function useQuestionTimer({
     onExpire,
     enabled = true,
 }: UseQuestionTimerProps) {
-    const { questionTimerMap, saveQuestionTime } = useTimerStore();
-
-    // Default to duration initially to prevent hydration mismatch flashes, 
-    // it will be immediately corrected by the effect.
+    // Start with full duration for SSR hydration matches
     const [remaining, setRemaining] = useState(duration);
-
+    
     const onExpireRef = useRef(onExpire);
     onExpireRef.current = onExpire;
-
-    const remainingRef = useRef(remaining);
-    remainingRef.current = remaining;
 
     useEffect(() => {
         if (!enabled || !questionId) return;
 
-        // Restore saved time or start fresh
-        const savedTime = questionTimerMap[questionId];
-        const initialTime = (savedTime !== undefined && savedTime > 0) ? savedTime : duration;
+        const storageKey = `timer_endTime_${questionId}`;
+        const now = Date.now();
+        
+        // 1. Determine the end time
+        let endTime = parseInt(localStorage.getItem(storageKey) || "0", 10);
+        
+        // If no valid end time exists in storage, calculate a new one
+        if (!endTime || endTime <= now) {
+            endTime = now + duration * 1000;
+            localStorage.setItem(storageKey, endTime.toString());
+        }
 
-        setRemaining(initialTime);
-        remainingRef.current = initialTime;
+        // 2. Initial calculation
+        const initialRemaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+        setRemaining(initialRemaining);
 
-        if (initialTime <= 0) {
+        if (initialRemaining <= 0) {
             onExpireRef.current();
             return;
         }
 
+        // 3. Tick interval
         const interval = setInterval(() => {
-            setRemaining((prev) => {
-                const next = prev - 1;
-                if (next <= 0) {
-                    clearInterval(interval);
-                    onExpireRef.current();
-                    return 0;
-                }
-                return next;
-            });
+            const timeLeft = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+            setRemaining(timeLeft);
+            
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                onExpireRef.current();
+            }
         }, 1000);
 
         return () => {
             clearInterval(interval);
-            // Save time when leaving this question
-            saveQuestionTime(questionId, remainingRef.current);
         };
-    }, [questionId, duration, enabled]); // Only re-run when question changes
+    }, [questionId, duration, enabled]);
 
-    return { remaining };
+    // Cleanup helper (if needed globally, but usually it naturally expires)
+    const clearSavedTime = () => {
+        if (questionId) localStorage.removeItem(`timer_endTime_${questionId}`);
+    };
+
+    return { remaining, clearSavedTime };
 }

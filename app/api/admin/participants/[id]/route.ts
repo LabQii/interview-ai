@@ -45,12 +45,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             orderBy: { createdAt: "asc" }
         });
 
+        // Total interview questions configured in the system
+        const totalInterviewQuestions = await prisma.interviewQuestion.count();
+
         return NextResponse.json({
             success: true,
             participant,
             answers,
             violations,
-            analyses
+            analyses,
+            totalInterviewQuestions
         });
     } catch (e) {
         return NextResponse.json({ error: "Gagal memuat detail peserta" }, { status: 500 });

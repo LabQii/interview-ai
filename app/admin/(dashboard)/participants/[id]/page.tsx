@@ -27,15 +27,17 @@ export default function ParticipantDetail() {
     if (loading) return <div className="p-8 animate-pulse text-white/50">Memuat detail peserta...</div>;
     if (!data?.participant) return <div className="p-8 text-red-400">Peserta tidak ditemukan.</div>;
 
-    const { participant, answers, violations, analyses } = data;
+    const { participant, answers, violations, analyses, totalInterviewQuestions } = data;
     const test = participant.testSession;
     const interview = participant.interview;
     const code = test?.redeemCode || participant.redeemCode?.code || "-";
     const pos = test?.position || participant.redeemCode?.position || "-";
 
-    // Calculate correct ratio
+    // Calculate correct ratio for test
     const correctCount = answers.filter((a: any) => a.isCorrect).length;
     const totalAnswered = answers.length;
+    // Calculate AI analyses completion
+    const analysedCount = analyses?.length ?? 0;
 
     return (
         <div className="p-6 md:p-10 max-w-5xl mx-auto pb-24">
@@ -79,7 +81,7 @@ export default function ParticipantDetail() {
                         <>
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex flex-col">
-                                    <span className="text-5xl font-bold mb-1">{test.score ?? '-'}</span>
+                                    <span className="text-5xl font-bold mb-2">{test.score ?? '-'}</span>
                                     <span className="text-xs text-white/40 uppercase font-bold tracking-widest">Skor Akhir</span>
                                 </div>
                                 <div className="text-right">
@@ -134,7 +136,7 @@ export default function ParticipantDetail() {
                         <>
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex flex-col">
-                                    <span className="text-5xl font-bold mb-1">{interview.aiScore ? interview.aiScore.toFixed(1) : '-'}</span>
+                                    <span className="text-5xl font-bold mb-2">{interview.aiScore ? interview.aiScore.toFixed(1) : '-'}</span>
                                     <span className="text-xs text-white/40 uppercase font-bold tracking-widest">AI Score</span>
                                 </div>
                                 <div className="text-right">
@@ -147,6 +149,9 @@ export default function ParticipantDetail() {
                                             <span className="text-white/40">Belum Dinilai</span>
                                         )}
                                     </div>
+                                    <div className="text-sm text-white/50">
+                                        <span className="text-emerald-400 font-bold">{analysedCount} Soal</span> / {totalInterviewQuestions ?? analysedCount} Dianalisis
+                                    </div>
                                 </div>
                             </div>
 
@@ -157,7 +162,7 @@ export default function ParticipantDetail() {
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-white/50 text-sm">Retake Log</span>
-                                    <span className="font-bold text-sm text-white/80">
+                                    <span className={`font-bold text-sm ${interview.totalRetake > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                                         {interview.totalRetake}/{interview.maxRetake}
                                     </span>
                                 </div>

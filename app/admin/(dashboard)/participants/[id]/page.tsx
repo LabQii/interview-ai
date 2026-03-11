@@ -108,7 +108,7 @@ export default function ParticipantDetail() {
                                             <span className="text-white/40">Belum Mulai</span>
                                         )}
                                     </div>
-                                    <div className="text-sm text-white/50 mt-3">
+                                    <div className="text-sm text-white/50 mt-4">
                                         <span className="text-emerald-400 font-bold">{correctCount} Benar</span> / {totalAnswered} Dijawab
                                     </div>
                                 </div>
@@ -152,11 +152,8 @@ export default function ParticipantDetail() {
                                 <div className="flex flex-col">
                                     <div className="flex items-baseline gap-1 mb-2">
                                         <span className="text-5xl font-bold">
-                                            {aiScore100 !== null ? aiScore100.toFixed(1) : (interview.aiScore ? interview.aiScore.toFixed(1) : '-')}
+                                            {aiScore100 !== null ? Math.round(aiScore100) : (interview.aiScore ? Math.round(interview.aiScore) : '-')}
                                         </span>
-                                        {(aiScore100 !== null || interview.aiScore) && (
-                                            <span className="text-white/30 text-lg font-bold">/100</span>
-                                        )}
                                     </div>
                                     <span className="text-xs text-white/40 uppercase font-bold tracking-widest">AI Score</span>
                                 </div>
@@ -170,7 +167,7 @@ export default function ParticipantDetail() {
                                             <span className="text-white/40">Belum Dinilai</span>
                                         )}
                                     </div>
-                                    <div className="text-sm text-white/50 mt-3">
+                                    <div className="text-sm text-white/50 mt-4">
                                         <span className="text-emerald-400 font-bold">{analysedCount} Soal</span> / {totalInterviewQuestions ?? analysedCount} Dianalisis
                                     </div>
                                 </div>
